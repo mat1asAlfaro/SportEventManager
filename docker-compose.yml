@@ -10,7 +10,7 @@ services:
     ports:
       - "1433:1433"      # Mapea puerto del contenedor al host
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P PassGrupo1! -Q 'SELECT 1'"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P PassGrupo1! -Q 'SELECT 1'"]
       interval: 10s
       retries: 10
       start_period: 20s
