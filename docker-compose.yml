@@ -8,9 +8,14 @@ services:
       SA_PASSWORD: "PassGrupo1!"
       ACCEPT_EULA: "Y"
     ports:
-      - "1433:1433"      # Mapea puerto del contenedor al host
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P PassGrupo1! -Q 'SELECT 1'"]
       interval: 10s
       retries: 10
       start_period: 20s
+
+volumes:
+  sqlserver_data:
