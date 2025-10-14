@@ -14,14 +14,13 @@ namespace SportEventManager.Models
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? Location { get; set; }
-        public int MaxParticipants { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public Event()
         {
         }
 
-        public Event(int eventId, string name, string description, DateTime startDate, DateTime endDate, string location, int maxParticipants)
+        public Event(int eventId, string name, string description, DateTime startDate, DateTime endDate, string location)
         {
             EventId = eventId;
             Name = name;
@@ -29,7 +28,6 @@ namespace SportEventManager.Models
             StartDate = startDate;
             EndDate = endDate;
             Location = location;
-            MaxParticipants = maxParticipants;
             CreatedAt = DateTime.UtcNow;
         }
     }
