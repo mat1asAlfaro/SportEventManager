@@ -1,0 +1,107 @@
+:root {
+  /* Main Colors */
+  --color-primary: #6366f1;
+  --color-secondary: #8b5cf6;
+
+  /* Status Colors */
+  --color-success: rgba(16, 185, 129, 0.6); /* 153/255 ≈ 0.6 */
+  --color-warning: rgba(245, 158, 11, 0.6);
+  --color-error: rgba(239, 68, 68, 0.6);
+  --color-available: rgba(6, 182, 212, 0.6);
+
+  /* UI Colors */
+  --color-main-background: #1f2937;
+  --color-card-background: #374151;
+  --color-primary-text: #f9fafb;
+  --color-secondary-text: #d1d5db;
+  --color-accent: #ec4899;
+  --color-border: #565f6c;
+  --color-input-background: #4b5563;
+  --color-popup-background: rgba(0, 0, 0, 0.6);
+}
+
+/* Ejemplos de uso en elementos */
+html,
+body {
+  background-color: var(--color-main-background);
+  color: var(--color-primary-text);
+  font-family: "Geist Sans", "Geist Sans Fallback", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Helvetica Neue", sans-serif;
+}
+
+.card {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--color-primary-text);
+}
+
+button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-primary-text);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  background-color: var(--color-input-background);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-border);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.alert-success {
+  background-color: var(--color-success);
+  color: var(--color-primary-text);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.alert-warning {
+  background-color: var(--color-warning);
+  color: var(--color-primary-text);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.alert-error {
+  background-color: var(--color-error);
+  color: var(--color-primary-text);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.text-primary {
+  color: var(--color-primary-text) !important;
+}
+
+.text-secondary {
+  color: var(--color-secondary-text) !important;
+}
+
+.text-primary-color {
+  color: var(--color-primary);
+}
+
+.text-secondary-color {
+  color: var(--color-secondary);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
