@@ -12,6 +12,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 
 builder.Services.AddDbContext<SportEventDbContext>(Options =>
