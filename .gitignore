@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+Migrations/
 
 ## User-specific files
 *.user
@@ -20,6 +21,8 @@ ScaffoldingReadMe.txt
 
 ## Visual Studio for Mac
 .vscode/
+.vs/
+.config/
 *.pidb
 *.userprefs
 
