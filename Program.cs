@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SportEventManager.Components;
 using SportEventManager.Core;
 using SportEventManager.Data;
 using SportEventManager.Data.Persistence;
+using SportEventManager.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 
 builder.Services.AddDbContext<SportEventDbContext>(Options =>
     Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
