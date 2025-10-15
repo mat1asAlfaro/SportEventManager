@@ -1,0 +1,56 @@
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">@Title</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <div class="modal-body">
+        @ChildContent
+      </div>
+
+      <div class="modal-footer">
+        @if (!string.IsNullOrEmpty(CancelButtonText))
+        {
+          <button class="btn btn-secondary fw-semibold" @onclick="Close">@CancelButtonText</button>
+        }
+
+
+        @if (!string.IsNullOrEmpty(ConfirmButtonText))
+        {
+          <button class="btn @ConfirmButtonClass fw-semibold" @onclick="ConfirmAction">@ConfirmButtonText</button>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  private bool IsVisible { get; set; }
+  [Parameter] public string Title { get; set; } = "Modal";
+  [Parameter] public string CancelButtonText { get; set; } = "Cancelar";
+  [Parameter] public string ConfirmButtonText { get; set; } = "Confirmar";
+  [Parameter] public string ConfirmButtonClass { get; set; } = "btn-primary";
+  [Parameter] public EventCallback OnConfirm { get; set; }
+  [Parameter] public RenderFragment? ChildContent { get; set; }
+  public void Show(int entityId, string name)
+  {
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task ConfirmAction()
+  {
+    if (OnConfirm.HasDelegate)
+    {
+      await OnConfirm.InvokeAsync();
+    }
+    IsVisible = false;
+  }
+
+  private void Close()
+  {
+    IsVisible = false;
+  }
+}

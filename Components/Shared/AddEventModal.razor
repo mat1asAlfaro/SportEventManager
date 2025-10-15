@@ -1,0 +1,95 @@
+@using SportEventManager.Models
+@inherits LayoutComponentBase
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nuevo Evento</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <div class="modal-body">
+        <EditForm Model="newEvent" OnValidSubmit="HandleSave">
+          <DataAnnotationsValidator />
+          <ValidationSummary />
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nombre del evento</label>
+            <InputText class="form-control" @bind-Value="newEvent.Name" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Descripción</label>
+            <InputTextArea class="form-control" @bind-Value="newEvent.Description" rows="3" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Ubicación</label>
+            <InputText class="form-control" @bind-Value="newEvent.Location" />
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label class="form-label fw-semibold">Fecha inicio</label>
+              <InputDate class="form-control custom-datetime" @bind-Value="newEvent.StartDate" />
+            </div>
+            <div class="col">
+              <label class="form-label fw-semibold">Fecha fin</label>
+              <InputDate class="form-control custom-datetime" @bind-Value="newEvent.EndDate" />
+            </div>
+          </div>
+        </EditForm>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary fw-semibold" @onclick="Close">Cancelar</button>
+        <button class="btn btn-primary fw-semibold" @onclick="HandleSave">Guardar evento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  private bool IsVisible { get; set; }
+  private Event newEvent = new();
+
+  [Parameter] public EventCallback<Event> OnSave { get; set; }
+
+  public void Show()
+  {
+    int nextYear = DateTime.Today.Year + 1;
+    DateTime date = new DateTime(nextYear, 1, 1);
+    while (date.DayOfWeek != DayOfWeek.Sunday)
+    {
+      date = date.AddDays(1);
+    }
+
+    newEvent = new Event
+    {
+      Name = $"San Fernando {DateTime.Now.Year + 1}",
+      Description = "Un evento deportivo único que combina adrenalina, paisajes impresionantes y el espíritu competitivo de los participantes.",
+      Location = "Punta del Este",
+      StartDate = new DateTime(date.Year, date.Month, date.Day),
+      EndDate = new DateTime(date.Year, date.Month, date.Day)
+    };
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task HandleSave()
+  {
+    if (string.IsNullOrWhiteSpace(newEvent.Name) || string.IsNullOrWhiteSpace(newEvent.Location))
+      return;
+
+    if (OnSave.HasDelegate)
+      await OnSave.InvokeAsync(newEvent);
+
+    IsVisible = false;
+  }
+
+  private void Close()
+  {
+    IsVisible = false;
+  }
+}

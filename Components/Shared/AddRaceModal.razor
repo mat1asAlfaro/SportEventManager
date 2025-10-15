@@ -1,0 +1,85 @@
+@using SportEventManager.DTOs
+@using SportEventManager.Models
+@inherits LayoutComponentBase
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Carrera</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre</label>
+          <input type="text" class="form-control" @bind="EditableRace.Name" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Distancia (km)</label>
+          <input type="number" class="form-control" step="0.1" min="1" @bind="EditableRace.DistanceKm" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Máx. Participantes</label>
+          <input type="number" class="form-control" step="50" min="1" @bind="EditableRace.MaxParticipants" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Hora de inicio</label>
+          <input type="datetime-local" class="form-control custom-datetime" @bind="EditableRace.StartTime" />
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary fw-semibold" @onclick="Close">Cancelar</button>
+          <button class="btn btn-primary fw-semibold" @onclick="Save">Agregar carrera</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  [Parameter] public int EventId { get; set; }
+  [Parameter] public EventCallback<Race> OnSave { get; set; }
+  [Parameter] public EventCallback OnCancel { get; set; }
+
+  private bool IsVisible { get; set; }
+  private Race EditableRace { get; set; } = new();
+
+  public void Show(int eventId)
+  {
+    int nextYear = DateTime.Today.Year + 1;
+    DateTime date = new DateTime(nextYear, 1, 1);
+    while (date.DayOfWeek != DayOfWeek.Sunday)
+    {
+      date = date.AddDays(1);
+    }
+
+    EventId = eventId;
+    EditableRace = new Race
+    {
+      EventId = eventId,
+      Name = "San Fernando 10k",
+      DistanceKm = 10,
+      MaxParticipants = 4500,
+      StartTime = new DateTime(date.Year, date.Month, date.Day, 21, 0, 0)
+    };
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task Save()
+  {
+    EditableRace.EventId = EventId;
+    await OnSave.InvokeAsync(EditableRace);
+    IsVisible = false;
+  }
+
+  private async Task Close()
+  {
+    IsVisible = false;
+    await OnCancel.InvokeAsync();
+  }
+}
