@@ -44,7 +44,6 @@ namespace SportEventManager.Data
                 existingEvent.StartDate = evnt.StartDate;
                 existingEvent.EndDate = evnt.EndDate;
                 existingEvent.Location = evnt.Location;
-                existingEvent.MaxParticipants = evnt.MaxParticipants;
 
                 await _context.SaveChangesAsync();
             }
