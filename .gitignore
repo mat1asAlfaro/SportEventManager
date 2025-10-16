@@ -8,6 +8,8 @@ out/
 *.suo
 *.userosscache
 *.sln.docstates
+.vs/
+.config/
 
 ## ASP.NET Scaffolding
 ScaffoldingReadMe.txt
