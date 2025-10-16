@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using SportEventManager.Core;
 using SportEventManager.Data.Persistence;
+using SportEventManager.DTOs;
 using SportEventManager.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace SportEventManager.Data
 {
@@ -26,6 +28,48 @@ namespace SportEventManager.Data
         {
             var evnt = _context.Events.FirstOrDefault(e => e.EventId == eventId);
             return await Task.FromResult(evnt);
+        }
+
+        public async Task<List<EventDTO>> GetEventsWithRacesAndParticipantCountAsync()
+        {
+            return await _context.Events
+                .Select(e => new EventDTO
+                {
+                    EventId = e.EventId,
+                    Name = e.Name,
+                    Description = e.Description,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    Location = e.Location,
+
+                    TotalParticipantsRegistration = _context.Registrations
+                        .Where(r => _context.Races
+                            .Where(ra => ra.EventId == e.EventId)
+                            .Select(ra => ra.RaceId)
+                            .Contains(r.RaceId))
+                        .Select(r => r.ParticipantId)
+                        .Distinct()
+                        .Count(),
+
+                    Races = _context.Races
+                        .Where(race => race.EventId == e.EventId)
+                        .Select(race => new RaceDTO
+                        {
+                            RaceId = race.RaceId,
+                            Name = race.Name,
+                            DistanceKm = race.DistanceKm,
+                            MaxParticipants = race.MaxParticipants,
+                            StartTime = race.StartTime,
+                            TotalParticipantRegistration = _context.Registrations
+                                .Where(reg => reg.RaceId == race.RaceId)
+                                .Select(reg => reg.ParticipantId)
+                                .Distinct()
+                                .Count()
+                        })
+                        .ToList()
+
+                })
+                .ToListAsync();
         }
 
         public async Task AddEventAsync(Event evnt)

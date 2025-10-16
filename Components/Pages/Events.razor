@@ -1,0 +1,217 @@
+@page "/events"
+@using Microsoft.EntityFrameworkCore.Migrations.Operations
+@using Microsoft.IdentityModel.Protocols.OpenIdConnect
+@using SportEventManager.Core
+@using SportEventManager.Components.Shared
+@using SportEventManager.DTOs
+@using SportEventManager.Data
+@using SportEventManager.Models
+@using System.Runtime.InteropServices
+@rendermode InteractiveServer
+@inject IEventRepository EventRepository
+@inject IRaceRepository RaceRepository
+@inject IJSRuntime JS
+
+<PageTitle>Eventos</PageTitle>
+
+<div class="min-vh-100 py-5">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+
+    @* Header *@
+    <div
+      class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-5">
+      <div>
+        <h1 class="fs-3 fw-bold text-primary mb-2">Gestión de Eventos</h1>
+        <p class="text-secondary mb-0">Administra eventos y sus carreras deportivas</p>
+      </div>
+      <button class="btn btn-primary btn-lg d-flex align-items-center gap-2 fs-6 fw-semibold"
+        @onclick="ShowAddEventModal">
+        <span class="material-symbols-outlined">add</span>
+        Crear Nuevo Evento
+      </button>
+
+      <AddEventModal @ref="addEventModal" OnSave="HandleSaveAddEvent" />
+    </div>
+
+    @* Stats Cards *@
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+      <div class="col">
+        <StatsCard Title="Total Eventos" Value="@(events.Count.ToString() ?? "0")" Description="eventos registrados"
+          Icon="calendar_today" IconClass="fs-5" />
+      </div>
+      <div class="col">
+        <StatsCard Title="Total Carreras" Value="@(totalCountRaces.ToString() ?? "0")"
+          Description="carreras disponibles" Icon="trophy" IconStyle="Outlined" IconClass="fs-5" />
+      </div>
+      <div class="col">
+        <StatsCard Title="Corredores Totales" Value="@(totalCountParticipants.ToString() ?? "0")"
+          Description="inscripciones activas" Icon="group" IconStyle="Outlined" IconClass="fs-5" />
+      </div>
+    </div>
+
+    @* Event Grid *@
+    @if (events.Any())
+    {
+      <div class="row row-cols-1 row-cols-lg-2 g-4">
+        @foreach (var ev in events)
+        {
+          <div class="col">
+            <EventCard Event="ev" OnEdit="HandleEditEvent" OnDelete="HandleDeleteEvent" OnAddRace="HandleAddRace"
+              OnDeleteRace="HandleDeleteRace" />
+          </div>
+        }
+      </div>
+    }
+    else
+    {
+      <div class="text-center text-secondary py-5">
+        No hay eventos registrados.
+      </div>
+    }
+
+    @* Modals *@
+    <EditEventModal @ref="editModal" OnSave="HandleSaveEdit" />
+    <GenericConfirmModal @ref="deleteEventModal" Title="Confirmar Eliminación" ConfirmButtonText="Eliminar"
+      ConfirmButtonClass="btn-danger" OnConfirm="@ConfirmDeleteEvent">
+      <p>¿Estás seguro de que deseas eliminar el evento <strong>@selectedEventName</strong>? Esta acción no se puede
+        deshacer.
+      </p>
+    </GenericConfirmModal>
+    <AddRaceModal @ref="addModal" OnSave="HandleSaveAddRace" />
+    <GenericConfirmModal @ref="deleteRaceModal" Title="Confirmar Eliminación" ConfirmButtonText="Eliminar"
+      ConfirmButtonClass="btn-danger" OnConfirm="ConfirmDeleteRace">
+      <p>¿Estás seguro de que deseas eliminar la carrera <strong>@selectedRaceName</strong>? Esta acción no se puede
+        deshacer.</p>
+    </GenericConfirmModal>
+  </div>
+</div>
+
+@code {
+  private AddEventModal? addEventModal;
+  private List<EventDTO> events = new();
+  private int totalCountRaces;
+  private int totalCountParticipants;
+  private EditEventModal? editModal;
+  private GenericConfirmModal? deleteEventModal;
+  private GenericConfirmModal? deleteRaceModal;
+  private AddRaceModal? addModal;
+  private string selectedEventName = string.Empty;
+  private int selectedEventId;
+  private string selectedRaceName = string.Empty;
+  private int selectedRaceId;
+  private int selectedEventIdForRace;
+
+  protected override async Task OnInitializedAsync()
+  {
+    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+  }
+
+  private void ShowAddEventModal()
+  {
+    addEventModal?.Show();
+  }
+
+  private async Task HandleSaveAddEvent(Models.Event newEvent)
+  {
+    await EventRepository.AddEventAsync(newEvent);
+    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+    StateHasChanged();
+  }
+
+  private void HandleEditEvent(int eventId)
+  {
+    var ev = events.FirstOrDefault(e => e.EventId == eventId);
+    if (ev != null)
+      editModal?.Show(ev);
+  }
+
+  private async Task HandleSaveEdit(Models.Event updatedEvent)
+  {
+    await EventRepository.UpdateEventAsync(updatedEvent);
+
+    var existing = events.FirstOrDefault(e => e.EventId == updatedEvent.EventId);
+    if (existing != null)
+    {
+      existing.Name = updatedEvent.Name;
+      existing.Description = updatedEvent.Description;
+      existing.StartDate = updatedEvent.StartDate;
+      existing.EndDate = updatedEvent.EndDate;
+      existing.Location = updatedEvent.Location;
+    }
+
+    StateHasChanged();
+  }
+
+  private void HandleDeleteEvent(int eventId)
+  {
+    var ev = events.FirstOrDefault(e => e.EventId == eventId);
+    if (ev != null)
+    {
+      selectedEventId = ev.EventId;
+      selectedEventName = ev.Name ?? "evento";
+      deleteEventModal?.Show(selectedEventId, selectedEventName);
+    }
+  }
+
+  private async Task ConfirmDeleteEvent()
+  {
+    await EventRepository.DeleteEventAsync(selectedEventId);
+
+    var ev = events.FirstOrDefault(e => e.EventId == selectedEventId);
+    if (ev != null)
+      events.Remove(ev);
+
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+
+    StateHasChanged();
+  }
+
+  private void HandleAddRace(int eventId)
+  {
+    addModal?.Show(eventId);
+  }
+
+  private async Task HandleSaveAddRace(Race newRace)
+  {
+    await RaceRepository.AddRaceAsync(newRace);
+    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+    StateHasChanged();
+  }
+
+  private void HandleDeleteRace((int EventId, int RaceId) data)
+  {
+    selectedEventIdForRace = data.EventId;
+    selectedRaceId = data.RaceId;
+
+    var ev = events.FirstOrDefault(e => e.EventId == data.EventId);
+    var race = ev?.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
+    selectedRaceName = race?.Name ?? string.Empty;
+
+    deleteRaceModal?.Show(selectedRaceId, selectedRaceName);
+  }
+
+  private async Task ConfirmDeleteRace()
+  {
+    await RaceRepository.DeleteRaceAsync(selectedRaceId);
+
+    var ev = events.FirstOrDefault(e => e.EventId == selectedEventIdForRace);
+    if (ev != null)
+    {
+      var raceToRemove = ev.Races.FirstOrDefault(r => r.RaceId == selectedRaceId);
+      if (raceToRemove != null)
+        ev.Races.Remove(raceToRemove);
+    }
+
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+
+    StateHasChanged();
+  }
+}

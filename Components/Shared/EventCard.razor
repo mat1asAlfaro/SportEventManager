@@ -1,0 +1,117 @@
+@using SportEventManager.Models
+@using SportEventManager.DTOs
+@inherits LayoutComponentBase
+
+<div class="card shadow-sm mt-3">
+  <!-- Header -->
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="mb-2 fw-semibold" style="font-size: 18px">@Event.Name</h5>
+        <span class="badge @GetStatusBadgeClass()">@GetStatusLabel()</span>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-sm text-secondary border-0 p-1" @onclick="() => OnEdit.InvokeAsync(Event.EventId)">
+          <span class="material-symbols-outlined fs-5">edit_square</span>
+        </button>
+        <button class="btn btn-sm text-error border-0 p-1" @onclick="() => OnDelete.InvokeAsync(Event.EventId)">
+          <span class="material-symbols-outlined fs-5">delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body pt-4">
+    <div class="mb-3">
+      <div class="d-flex align-items-center text-secondary small mb-2">
+        <span class="material-symbols-outlined me-3 fs-5">calendar_today</span>
+        <span>@Event.StartDate.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+      </div>
+      <div class="d-flex align-items-center text-secondary small mb-2">
+        <span class="material-symbols-outlined me-3 fs-5">location_on</span>
+        <span>@Event.Location</span>
+      </div>
+      <div class="d-flex align-items-center text-secondary small">
+        <span class="material-symbols-outlined me-3 fs-5">group</span>
+        <span>@Event.TotalParticipantsRegistration corredores inscriptos</span>
+      </div>
+    </div>
+
+    <!-- Races Section -->
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 fw-semibold">Carreras (@Event.Races.Count())</h6>
+        <button class="btn btn-sm d-flex align-items-center fw-semibold text-primary"
+          @onclick="() => OnAddRace.InvokeAsync(Event.EventId)">
+          <span class="material-symbols-outlined me-1 fs-5">add</span> Agregar
+        </button>
+      </div>
+
+      @if (Event.Races.Any())
+      {
+        <div class="d-flex flex-column gap-2">
+          @foreach (var race in Event.Races)
+          {
+            <div class="d-flex justify-content-between align-items-center border p-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined text-primary fs-5">emoji_events</span>
+                <div>
+                  <div class="fw-semibold small">@race.Name</div>
+                  <div class="text-secondary small">
+                    @race.DistanceKm km • @race.TotalParticipantRegistration @(race.TotalParticipantRegistration == 1 ?
+                    "inscripto" : "inscriptos") / @race.MaxParticipants máx
+                  </div>
+
+                  <div class="text-secondary small">
+                    Hora inicio: @race.StartTime.ToString("HH:mm 'hs'")
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-sm text-error p-1"
+                @onclick="() => OnDeleteRace.InvokeAsync((Event.EventId, race.RaceId))">
+                <span class="material-symbols-outlined fs-5">delete</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+      else
+      {
+        <div class="border text-center py-3 text-secondary small">
+          No hay carreras. Agrega la primera carrera.
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@code {
+  [Parameter] public EventDTO Event { get; set; } = default!;
+  [Parameter] public EventCallback<int> OnEdit { get; set; }
+  [Parameter] public EventCallback<int> OnDelete { get; set; }
+  [Parameter] public EventCallback<int> OnAddRace { get; set; }
+  [Parameter] public EventCallback<(int EventId, int RaceId)> OnDeleteRace { get; set; }
+
+  private string GetStatusLabel()
+  {
+    var now = DateTime.Now;
+    var diff = Event.StartDate - now;
+
+    if (Event.StartDate < now) return "Finalizado";
+    if (diff.TotalDays <= 30) return "Próximo";
+    return "Confirmado";
+  }
+
+  private string GetStatusBadgeClass()
+  {
+    var now = DateTime.Now;
+    var diff = Event.StartDate - now;
+
+    if (Event.StartDate < now) return "status-badge-finalized";
+    if (diff.TotalDays <= 30) return "status-badge-upcoming";
+    return "status-badge-confirmed";
+  }
+}
