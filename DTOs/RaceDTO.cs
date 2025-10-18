@@ -13,5 +13,6 @@ namespace SportEventManager.DTOs
         public int TotalParticipantRegistration { get; set; }
         public int MaxParticipants { get; set; }
         public DateTime StartTime { get; set; }
+        public ICollection<SplitDTO>? Splits { get; set; }
     }
 }
