@@ -10,41 +10,40 @@
       </div>
 
       <div class="modal-body">
-        <EditForm Model="newEvent" OnValidSubmit="HandleSave">
-          <DataAnnotationsValidator />
-          <ValidationSummary />
-
           <div class="mb-3">
             <label class="form-label fw-semibold">Nombre del evento</label>
-            <InputText class="form-control" @bind-Value="newEvent.Name" />
+            <input type="text" class="form-control" @bind="newEvent.Name" />
           </div>
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Descripción</label>
-            <InputTextArea class="form-control" @bind-Value="newEvent.Description" rows="3" />
+            <input type="text" class="form-control" @bind="newEvent.Description" rows="3" />
           </div>
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Ubicación</label>
-            <InputText class="form-control" @bind-Value="newEvent.Location" />
+            <input type="text" class="form-control" @bind="newEvent.Location" />
           </div>
 
           <div class="row">
             <div class="col">
               <label class="form-label fw-semibold">Fecha inicio</label>
-              <InputDate class="form-control custom-datetime" @bind-Value="newEvent.StartDate" />
+              <input type="datetime-local" class="form-control custom-datetime" @bind="newEvent.StartDate" />
             </div>
             <div class="col">
               <label class="form-label fw-semibold">Fecha fin</label>
-              <InputDate class="form-control custom-datetime" @bind-Value="newEvent.EndDate" />
+              <input type="datetime-local" class="form-control custom-datetime" @bind="newEvent.EndDate" />
             </div>
           </div>
-        </EditForm>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary fw-semibold" @onclick="Close">Cancelar</button>
-        <button class="btn btn-primary fw-semibold" @onclick="HandleSave">Guardar evento</button>
+        <button class="btn btn-secondary fw-semibold" @onclick="Close">
+          <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
+        </button>
+        <button class="btn btn-primary fw-semibold" @onclick="HandleSave">
+          <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar evento
+        </button>
       </div>
     </div>
   </div>

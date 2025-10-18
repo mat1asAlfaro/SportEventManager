@@ -12,31 +12,33 @@
 
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label fw-semibold">Nombre</label>
+          <label class="form-label small fw-semibold">Nombre</label>
           <input type="text" class="form-control" @bind="EditableEvent.Name" />
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Descripcion</label>
+          <label class="form-label small fw-semibold">Descripcion</label>
           <input type="text" class="form-control" @bind="EditableEvent.Description" />
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Fecha de inicio</label>
+          <label class="form-label small fw-semibold">Fecha de inicio</label>
           <input type="date" class="form-control custom-datetime" @bind="EditableEvent.StartDate" />
         </div>
-
         <div class="mb-3">
-          <label class="form-label fw-semibold">Fecha de fin</label>
+          <label class="form-label small fw-semibold">Fecha de fin</label>
           <input type="date" class="form-control custom-datetime" @bind="EditableEvent.EndDate" />
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Ubicación</label>
+          <label class="form-label small fw-semibold">Ubicación</label>
           <input type="text" class="form-control" @bind="EditableEvent.Location" />
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary fw-semibold" @onclick="Close">Cancelar</button>
-        <button class="btn btn-primary" @onclick="Save">Guardar cambios</button>
+        <button class="btn btn-secondary fw-semibold" @onclick="Close"><span
+            class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar</button>
+        <button class="btn btn-primary fw-semibold" @onclick="Save">
+          <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar cambios
+        </button>
       </div>
     </div>
   </div>
