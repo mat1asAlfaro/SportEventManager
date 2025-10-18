@@ -7,9 +7,11 @@
 @using SportEventManager.Data
 @using SportEventManager.Models
 @using System.Runtime.InteropServices
+@using System.Linq
 @rendermode InteractiveServer
 @inject IEventRepository EventRepository
 @inject IRaceRepository RaceRepository
+@inject ISplitRepository SplitRepository;
 @inject IJSRuntime JS
 
 <PageTitle>Eventos</PageTitle>
@@ -56,7 +58,8 @@
         @foreach (var ev in events)
         {
           <div class="col">
-            <EventCard Event="ev" OnEdit="HandleEditEvent" OnDelete="HandleDeleteEvent" OnAddRace="HandleAddRace"
+            <EventCard Event="ev" OnEdit=" HandleEditEvent" OnDelete="HandleDeleteEvent" OnAddRace="HandleAddRace"
+              OnAddSplit="HandleAddSplit" OnDeleteSplit="HandleDeleteSplitAsync" OnEditRace="HandleEditRace"
               OnDeleteRace="HandleDeleteRace" />
           </div>
         }
@@ -70,14 +73,16 @@
     }
 
     @* Modals *@
-    <EditEventModal @ref="editModal" OnSave="HandleSaveEdit" />
+    <EditEventModal @ref="editEventModal" OnSave="HandleSaveEditEvent" />
     <GenericConfirmModal @ref="deleteEventModal" Title="Confirmar Eliminación" ConfirmButtonText="Eliminar"
       ConfirmButtonClass="btn-danger" OnConfirm="@ConfirmDeleteEvent">
       <p>¿Estás seguro de que deseas eliminar el evento <strong>@selectedEventName</strong>? Esta acción no se puede
         deshacer.
       </p>
     </GenericConfirmModal>
-    <AddRaceModal @ref="addModal" OnSave="HandleSaveAddRace" />
+    <AddRaceModal @ref="addRaceModal" OnSave="HandleSaveAddRace" />
+    <AddSplitModal @ref="addSplitModal" OnSave="HandleSaveAddSplit" OnDelete="HandleDeleteSplit" />
+    <EditRaceModal @ref="editRaceModal" OnSave="HandleSaveEditRace" />
     <GenericConfirmModal @ref="deleteRaceModal" Title="Confirmar Eliminación" ConfirmButtonText="Eliminar"
       ConfirmButtonClass="btn-danger" OnConfirm="ConfirmDeleteRace">
       <p>¿Estás seguro de que deseas eliminar la carrera <strong>@selectedRaceName</strong>? Esta acción no se puede
@@ -91,10 +96,12 @@
   private List<EventDTO> events = new();
   private int totalCountRaces;
   private int totalCountParticipants;
-  private EditEventModal? editModal;
+  private EditEventModal? editEventModal;
   private GenericConfirmModal? deleteEventModal;
+  private AddSplitModal? addSplitModal;
+  private AddRaceModal? addRaceModal;
+  private EditRaceModal? editRaceModal;
   private GenericConfirmModal? deleteRaceModal;
-  private AddRaceModal? addModal;
   private string selectedEventName = string.Empty;
   private int selectedEventId;
   private string selectedRaceName = string.Empty;
@@ -103,7 +110,7 @@
 
   protected override async Task OnInitializedAsync()
   {
-    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
     totalCountRaces = events.Sum(e => e.Races.Count);
     totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
   }
@@ -116,7 +123,7 @@
   private async Task HandleSaveAddEvent(Models.Event newEvent)
   {
     await EventRepository.AddEventAsync(newEvent);
-    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
     totalCountRaces = events.Sum(e => e.Races.Count);
     totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
     StateHasChanged();
@@ -126,10 +133,10 @@
   {
     var ev = events.FirstOrDefault(e => e.EventId == eventId);
     if (ev != null)
-      editModal?.Show(ev);
+      editEventModal?.Show(ev);
   }
 
-  private async Task HandleSaveEdit(Models.Event updatedEvent)
+  private async Task HandleSaveEditEvent(Models.Event updatedEvent)
   {
     await EventRepository.UpdateEventAsync(updatedEvent);
 
@@ -173,15 +180,88 @@
 
   private void HandleAddRace(int eventId)
   {
-    addModal?.Show(eventId);
+    addRaceModal?.Show(eventId);
   }
 
   private async Task HandleSaveAddRace(Race newRace)
   {
     await RaceRepository.AddRaceAsync(newRace);
-    events = (await EventRepository.GetEventsWithRacesAndParticipantCountAsync()).ToList();
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
     totalCountRaces = events.Sum(e => e.Races.Count);
     totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+    StateHasChanged();
+  }
+
+  private void HandleAddSplit((int EventId, int RaceId) data)
+  {
+    var ev = events.FirstOrDefault(e => e.EventId == data.EventId);
+    var race = ev?.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
+
+    if (race != null)
+    {
+      if (race.Splits != null)
+      {
+        race.Splits = race.Splits.OrderBy(s => s.KmMark).ToList();
+        addSplitModal?.Show(race);
+      }
+    }
+  }
+
+  private async Task HandleSaveAddSplit(Split newSplit)
+  {
+    await SplitRepository.AddSplitAsync(newSplit);
+
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
+    var ev = events.FirstOrDefault(e => e.Races.Any(r => r.RaceId == newSplit.RaceId));
+    var race = ev?.Races.FirstOrDefault(r => r.RaceId == newSplit.RaceId);
+
+    if (race != null)
+      addSplitModal?.Show(race);
+
+    StateHasChanged();
+  }
+
+  private async Task HandleDeleteSplit(int splitId)
+  {
+    await SplitRepository.DeleteSplitAsync(splitId);
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
+    StateHasChanged();
+  }
+
+  private async Task HandleDeleteSplitAsync((int RaceId, int SplitId) data)
+  {
+    await SplitRepository.DeleteSplitAsync(data.SplitId);
+
+    var race = events.SelectMany(e => e.Races)
+    .FirstOrDefault(r => r.RaceId == data.RaceId);
+
+    if (race != null && race.Splits != null)
+    {
+      var split = race.Splits.FirstOrDefault(s => s.SplitId == data.SplitId);
+      if (split != null)
+        race.Splits.Remove(split);
+    }
+
+    StateHasChanged();
+  }
+
+  private void HandleEditRace((int EventId, int RaceId) data)
+  {
+    var ev = events.FirstOrDefault(e => e.EventId == data.EventId);
+    var race = ev?.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
+
+    if (race != null)
+      editRaceModal?.Show(race);
+  }
+
+  private async Task HandleSaveEditRace(Race updatedRace)
+  {
+    await RaceRepository.UpdateRaceAsync(updatedRace);
+    events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
+
+    totalCountRaces = events.Sum(e => e.Races.Count);
+    totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+
     StateHasChanged();
   }
 
