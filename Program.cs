@@ -17,6 +17,7 @@ builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+builder.Services.AddScoped<ISplitRepository, SplitRepository>();
 
 builder.Services.AddDbContext<SportEventDbContext>(Options =>
     Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
