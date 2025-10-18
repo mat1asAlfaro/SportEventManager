@@ -30,7 +30,7 @@ namespace SportEventManager.Data
             return await Task.FromResult(evnt);
         }
 
-        public async Task<List<EventDTO>> GetEventsWithRacesAndParticipantCountAsync()
+        public async Task<List<EventDTO>> GetAllEventsWithRacesAndSplitsAsync()
         {
             return await _context.Events
                 .Select(e => new EventDTO
@@ -60,11 +60,23 @@ namespace SportEventManager.Data
                             DistanceKm = race.DistanceKm,
                             MaxParticipants = race.MaxParticipants,
                             StartTime = race.StartTime,
+
                             TotalParticipantRegistration = _context.Registrations
                                 .Where(reg => reg.RaceId == race.RaceId)
                                 .Select(reg => reg.ParticipantId)
                                 .Distinct()
-                                .Count()
+                                .Count(),
+
+                            Splits = _context.Splits
+                                .Where(split => split.RaceId == race.RaceId)
+                                .OrderBy(split => split.KmMark)
+                                .Select(split => new SplitDTO
+                                {
+                                    SplitId = split.SplitId,
+                                    SplitName = split.SplitName,
+                                    KmMark = split.KmMark
+                                })
+                                .ToList()
                         })
                         .ToList()
 
