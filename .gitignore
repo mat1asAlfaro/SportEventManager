@@ -49,6 +49,9 @@ paket-files/
 wwwroot/css/app.css
 wwwroot/css/app.css.map
 
+## Third-party libraries (managed by LibMan)
+wwwroot/lib/
+
 # Node-related (if using npm/yarn for front-end tooling)
 node_modules/
 npm-debug.log

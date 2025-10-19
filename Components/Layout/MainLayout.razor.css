@@ -4,12 +4,17 @@
     flex-direction: column;
 }
 
+.navbar {
+    padding: 0px;
+}
+
 main {
     flex: 1;
 }
 
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+.content {
+    padding-top: 1.1rem;
+    padding-bottom: 2rem;
 }
 
 .top-row {
@@ -48,7 +53,7 @@ main {
 
 @media (min-width: 641px) {
     .page {
-        flex-direction: row;
+        flex-direction: column;
     }
 
     .sidebar {
