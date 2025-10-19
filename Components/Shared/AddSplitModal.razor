@@ -1,0 +1,137 @@
+@using SportEventManager.DTOs
+@using SportEventManager.Models
+@inherits LayoutComponentBase
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Puntos de Control - @RaceName
+        </h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <div class="modal-body">
+        <div class="border p-3 mb-4">
+          <h6 class="fw-semibold mb-3" style="font-size: 18px;">Agregar Punto de Control</h6>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nombre del Punto</label>
+            <input class="form-control placeholder-white" placeholder="ej. Salida, Control 5K, Meta"
+              @bind="NewSplitName" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Distancia</label>
+            <input type="number" class="form-control placeholder-white" step="0.5" max="@RaceDistanceKm" min="0"
+              placeholder="ej. 0 km, 5 km, 10 km" @bind="NewKmMark" />
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-primary fw-semibold" @onclick="Save">
+              <span class="material-symbols-outlined me-2 fs-6">add</span> Agregar Punto
+            </button>
+          </div>
+        </div>
+
+        @* Splits *@
+        @if (Splits.Any())
+        {
+          <div>
+            <h6 class="fw-semibold mb-3">Puntos Configurados (@Splits.Count)</h6>
+
+            <div class="d-flex flex-column gap-2 @(Splits.Count > 3 ? "split-scroll" : "")">
+              @foreach (var (split, index) in Splits.Select((s, i) => (s, i + 1)))
+              {
+                <div class="d-flex align-items-center justify-content-between border px-3 py-2">
+                  <div class="d-flex align-items-center gap-3">
+                    <div
+                      class="d-flex align-items-center justify-content-center p-3 bg-secondary circle-style text-center fw-semibold text-secondary">
+                      <span class="small">@index</span>
+                    </div>
+                    <div>
+                      <div class="fw-semibold">@split.SplitName</div>
+                      <div class="text-secondary small">@split.KmMark km</div>
+                    </div>
+                  </div>
+
+                  <span class="material-symbols-outlined text-danger fs-5 ms-auto"
+                    @onclick="() => RemoveSplit(split.SplitId)" role="button">close</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        else
+        {
+          <div class="border text-center py-3 text-secondary small">
+            No hay puntos de control configurados.
+          </div>
+        }
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary fw-semibold" @onclick="Close">
+          <span class="material-symbols-outlined me-2 fs-6">close</span>Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  [Parameter] public EventCallback<Split> OnSave { get; set; }
+  [Parameter] public EventCallback<int> OnDelete { get; set; }
+  [Parameter] public EventCallback OnCancel { get; set; }
+
+  private bool IsVisible { get; set; }
+  private int RaceId { get; set; }
+  private string RaceName { get; set; } = string.Empty;
+  private double RaceDistanceKm { get; set; }
+  private List<SplitDTO> Splits { get; set; } = new();
+  private string NewSplitName { get; set; } = string.Empty;
+  private string NewKmMark { get; set; } = string.Empty;
+
+  public void Show(RaceDTO race)
+  {
+    RaceId = race.RaceId;
+    RaceName = race.Name ?? string.Empty;
+    RaceDistanceKm = race.DistanceKm;
+    Splits = race.Splits != null ? new List<SplitDTO>(race.Splits) : new List<SplitDTO>();
+
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task Save()
+  {
+    var newSplit = new Split { RaceId = RaceId, SplitName = NewSplitName, KmMark = double.Parse(NewKmMark) }; await
+    OnSave.InvokeAsync(newSplit);
+
+    ResetForm();
+  }
+
+  private async Task RemoveSplit(int splitId)
+  {
+    var split = Splits.FirstOrDefault(s => s.SplitId == splitId);
+    if (split != null)
+    {
+      Splits.Remove(split);
+      await OnDelete.InvokeAsync(splitId);
+    }
+  }
+
+  private void ResetForm()
+  {
+    NewSplitName = string.Empty;
+    NewKmMark = string.Empty;
+  }
+
+  private async Task Close()
+  {
+    ResetForm();
+    IsVisible = false;
+    await OnCancel.InvokeAsync();
+  }
+}

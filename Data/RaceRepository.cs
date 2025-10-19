@@ -37,6 +37,7 @@ namespace SportEventManager.Data
       {
         existingRace.Name = race.Name;
         existingRace.DistanceKm = race.DistanceKm;
+        existingRace.MaxParticipants = race.MaxParticipants;
         existingRace.StartTime = race.StartTime;
 
         await _context.SaveChangesAsync();

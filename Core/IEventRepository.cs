@@ -11,7 +11,7 @@ namespace SportEventManager.Core
     {
         Task<List<Event>> GetAllEventsAsync();
         Task<Event?> GetEventByIdAsync(int eventId);
-        Task<List<EventDTO>> GetEventsWithRacesAndParticipantCountAsync();
+        Task<List<EventDTO>> GetAllEventsWithRacesAndSplitsAsync();
         Task AddEventAsync(Event evnt);
         Task UpdateEventAsync(Event evnt);
         Task DeleteEventAsync(int eventId);

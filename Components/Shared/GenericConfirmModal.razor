@@ -13,13 +13,17 @@
       <div class="modal-footer">
         @if (!string.IsNullOrEmpty(CancelButtonText))
         {
-          <button class="btn btn-secondary fw-semibold" @onclick="Close">@CancelButtonText</button>
+          <button class="btn btn-secondary fw-semibold" @onclick="Close">
+            <span class="material-symbols-outlined me-2 fs-6">cancel</span>@CancelButtonText
+          </button>
         }
 
 
         @if (!string.IsNullOrEmpty(ConfirmButtonText))
         {
-          <button class="btn @ConfirmButtonClass fw-semibold" @onclick="ConfirmAction">@ConfirmButtonText</button>
+          <button class="btn @ConfirmButtonClass fw-semibold" @onclick="ConfirmAction">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@ConfirmButtonText
+          </button>
         }
       </div>
     </div>
