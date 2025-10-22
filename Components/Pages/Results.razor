@@ -1,0 +1,51 @@
+@page "/results"
+@rendermode InteractiveServer
+
+<PageTitle>Results</PageTitle>
+
+<!-- SECCIÓN - Título -->
+<div class="results-section position-relative py-5 text-center">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="leaderboard-icon-border d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4">
+      <span class="material-symbols-outlined fs-1">leaderboard</span>
+    </div>
+    <h1 class="fw-bold mb-3">Consulta tus Resultados</h1>
+    <p class="text-secondary mb-4">Ingresa tu dorsal para ver tu rendimiento en cada punto de control</p>
+  </div>
+</div>
+
+<!-- SECCIÓN - Buscar Resultados -->
+<div class="container-lg px-4 px-sm-5 px-lg-4 mb-5">
+  <div class="search-container p-4">
+    <h5 class="fw-bold mb-2">Buscar Resultados</h5>
+    <p class="text-secondary mb-4">Selecciona el evento, la carrera e ingresa tu número de dorsal</p>
+
+    <!-- Evento -->
+    <div class="mb-3">
+      <label class="form-label">Evento</label>
+      <select class="form-select">
+        <option value="" selected>Selecciona un evento</option>
+      </select>
+    </div>
+
+    <!-- Carrera -->
+    <div class="mb-3">
+      <label class="form-label">Carrera</label>
+      <select class="form-select" disabled>
+        <option value="" selected>Selecciona una carrera</option>
+      </select>
+    </div>
+
+    <!-- Número de Dorsal -->
+    <div class="mb-3">
+      <label class="form-label">Número de Dorsal</label>
+      <input type="text" class="form-control" placeholder="Ej: 101" disabled />
+    </div>
+
+    <!-- Botón Buscar -->
+    <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2" disabled>
+      <span class="material-symbols-outlined">search</span>
+      <span class="fw-semibold">Buscar Resultados</span>
+    </button>
+  </div>
+</div>

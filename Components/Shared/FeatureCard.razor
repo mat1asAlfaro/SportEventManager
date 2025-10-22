@@ -1,0 +1,22 @@
+<div class="feature-card text-center h-100">
+  <div class="d-inline-flex align-items-center justify-content-center rounded-4 mb-3 @IconColorClass" style="width:64px; height:64px;">
+    <span class="material-symbols-outlined text-white fs-1">@Icon</span>
+  </div>
+  <h5 class="fw-bold mb-2">@Title</h5>
+  <p class="text-secondary mb-0">@Description</p>
+</div>
+
+@code {
+  [Parameter] public string? Title { get; set; }
+  [Parameter] public string? Description { get; set; }
+  [Parameter] public string? Icon { get; set; }
+  [Parameter] public string? IconColorClass { get; set; } = "bg-primary";
+  [Parameter] public string IconStyle { get; set; } = "outlined";
+
+  private string IconStyleClass => IconStyle.ToLower() switch
+  {
+    "rounded" => "material-symbols-rounded",
+    "sharp" => "material-symbols-sharp",
+    _ => "material-symbols-outlined"
+  };
+}
