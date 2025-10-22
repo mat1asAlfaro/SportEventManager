@@ -1,0 +1,82 @@
+/* SECCIÓN - Banner */
+.full-width-section {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+}
+
+.banner-section {
+  min-height: 600px;
+  background: url('assets/images/home-background.jpg');
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin-top: -1.1rem;
+}
+
+.trophy-icon-border {
+  width: 65px;
+  height: 65px;
+}
+
+.banner-subtitle {
+  font-size: clamp(0.8rem, 1.8vw, 1.25rem);
+  max-width: 700px;
+  line-height: 1.5;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* SECCIÓN - ¿Qué puedes consultar? */
+.consult-section {
+  background-color: var(--color-main-background);
+}
+
+/* SECCION - ¿Cómo funciona? */
+.how-it-works-section {
+  background-color: var(--color-card-background);
+}
+
+.step-number {
+  width: clamp(40px, 8vw, 60px);
+  height: clamp(40px, 8vw, 60px);
+  aspect-ratio: 1 / 1;
+  background-color: var(--color-secondary);
+  font-weight: bold;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.steps-wrapper {
+  max-width: 70%;
+  margin: 0 auto;
+}
+
+/* SECCIÓN - Consulta tus resultados */
+.results-call-section {
+  background-color: var(--color-main-background);
+}
+
+.results-call-card {
+  background-color: var(--color-card-background);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.results-border {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
