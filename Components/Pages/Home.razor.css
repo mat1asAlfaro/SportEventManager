@@ -8,7 +8,7 @@
 
 .banner-section {
   min-height: 40rem;
-  background: url('assets/images/home-background.jpg') center/cover no-repeat;
+  background: url("assets/images/home-background.jpg") center/cover no-repeat;
   margin-top: -1.1rem;
 }
 
@@ -62,12 +62,13 @@
 }
 
 .carousel-dots button {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: clamp(0.5rem, 2vw, 1rem);
+  height: clamp(0.5rem, 2vw, 1rem);
   border-radius: 50%;
   border: 2px solid rgb(255, 255, 255);
   background: transparent;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .carousel-dots button.active {
@@ -88,7 +89,7 @@
   height: clamp(2.5rem, 8vw, 3.75rem);
   background-color: var(--color-secondary);
   font-weight: bold;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 5vw, 2rem);
   border-radius: 50%;
   display: flex;
   align-items: center;
