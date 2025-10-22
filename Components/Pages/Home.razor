@@ -1,7 +1,200 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<!-- SECCIÓN - Banner -->
+<div class="banner-section position-relative d-flex align-items-center justify-content-center full-width-section">
+  <div class="banner-overlay position-absolute top-0 start-0 w-100 h-100 bg-black opacity-75"></div>
 
-Welcome to your new app.
+  <!-- Contenido -->
+  <div class="banner-content position-relative py-5">
+    <div class="container-lg px-4 px-sm-5 px-lg-4">
+      <div class="text-center text-primary">
+        @if (currentSlide == 0)
+        {
+          <div class="trophy-icon-border d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4">
+            <span class="material-symbols-outlined fs-1">trophy</span>
+          </div>
+          <h1 class="fw-bold mb-3 banner-title">Consulta tus Resultados</h1>
+          <p class="text-secondary mb-4 mx-auto banner-subtitle">Ingresa tu número de dorsal para ver tu rendimiento detallado en cada punto de control de la carrera</p>
+          <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            @onclick="Results">
+            <span class="material-symbols-outlined fs-4">search</span>
+            Buscar mis Resultados
+          </button>
+        }
+        else
+        {
+          <div
+            class="trophy-icon-border d-inline-flex align-items-center justify-content-center bg-success rounded-4 mb-4">
+            <span class="material-symbols-outlined fs-1">event_available</span>
+          </div>
+          <h1 class="fw-bold mb-3 banner-title">Inscríbete a tu Próxima Carrera</h1>
+          <p class="text-secondary mb-4 mx-auto banner-subtitle">Únete a miles de corredores y vive la experiencia de competir en eventos deportivos únicos</p>
+          <button class="btn btn-success btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            @onclick="Events">
+            <span class="material-symbols-outlined fs-4">directions_run</span>
+            Ver Eventos Disponibles
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles -->
+  <button class="carousel-btn left" @onclick="PreviousSlide">
+    <span class="material-symbols-outlined">chevron_left</span>
+  </button>
+  <button class="carousel-btn right" @onclick="NextSlide">
+    <span class="material-symbols-outlined">chevron_right</span>
+  </button>
+
+  <!-- Indicadores -->
+  <div class="carousel-dots">
+    <button class="@(currentSlide == 0 ? "active" : "")" @onclick="() => currentSlide = 0"></button>
+    <button class="@(currentSlide == 1 ? "active" : "")" @onclick="() => currentSlide = 1"></button>
+  </div>
+</div>
+
+<!-- SECCIÓN - ¿Qué puedes consultar? -->
+<section class="consult-section py-5">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold mb-3 text-primary">¿Qué puedes consultar?</h2>
+      <p class="text-secondary mb-0">Accede a información detallada de tu participación en el evento</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-md-4">
+        <FeatureCard Title="Tiempos y Ritmos"
+          Description="Consulta tu tiempo final, ritmo promedio y tiempos parciales en cada punto de control de la carrera."
+          Icon="timer" IconColorClass="bg-primary" />
+      </div>
+      <div class="col-12 col-md-4">
+        <FeatureCard Title="Posiciones"
+          Description="Conoce tu posición final y cómo evolucionó tu ranking en cada checkpoint durante la competencia."
+          Icon="sports_score" IconColorClass="bg-success" />
+      </div>
+      <div class="col-12 col-md-4">
+        <FeatureCard Title="Análisis de Rendimiento"
+          Description="Visualiza tu progreso punto por punto y analiza tu desempeño a lo largo de toda la carrera."
+          Icon="trending_up" IconColorClass="bg-info" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECCION - ¿Cómo funciona? -->
+<section class="how-it-works-section py-5 full-width-section">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold mb-3 text-primary">¿Cómo funciona?</h2>
+      <p class="text-secondary mb-0">Consulta tus resultados en 3 simples pasos</p>
+    </div>
+
+    <div class="steps-wrapper">
+      <!-- Paso 1 -->
+      <div class="row g-4 mb-3 align-items-center">
+        <div class="col-12 d-flex align-items-center">
+          <div class="step-number me-3">1</div>
+          <div>
+            <h5 class="fw-bold mb-2">Selecciona tu evento</h5>
+            <p class="text-secondary mb-0">Elige el evento deportivo en el que participaste de nuestra lista de competencias disponibles.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2 -->
+      <div class="row g-4 mb-3 align-items-center">
+        <div class="col-12 d-flex align-items-center">
+          <div class="step-number me-3">2</div>
+          <div>
+            <h5 class="fw-bold mb-2">Elige tu carrera</h5>
+            <p class="text-secondary mb-0">Selecciona la distancia o modalidad específica en la que competiste (5K, 10K, 21K, etc.).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3 -->
+      <div class="row g-4 mb-3 align-items-center">
+        <div class="col-12 d-flex align-items-center">
+          <div class="step-number me-3">3</div>
+          <div>
+            <h5 class="fw-bold mb-2">Ingresa tu dorsal</h5>
+            <p class="text-secondary mb-0">Introduce tu número de dorsal y accede instantáneamente a todos tus resultados detallados.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECCIÓN - Consulta tus resultados -->
+<section class="results-call-section py-5">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="results-call-card text-center p-4 p-md-5">
+      <div class="results-border mx-auto mb-4">
+        <span class="material-symbols-outlined fs-1">check_circle</span>
+      </div>
+      <h3 class="fw-bold mb-3 text-primary">¿Listo para ver tus resultados?</h3>
+      <p class="text-secondary mb-4">Consulta tu rendimiento y descubre cómo te fue en cada etapa de la carrera</p>
+      <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+        @onclick="Results">
+        <span class="material-symbols-outlined fs-4">search</span>
+        Consultar Resultados
+      </button>
+    </div>
+  </div>
+</section>
+
+@code {
+  private int currentSlide = 0;
+  private Timer? timer;
+  private CancellationTokenSource? cts;
+
+  protected override void OnInitialized()
+  {
+    cts = new CancellationTokenSource();
+    StartTimer();
+  }
+
+  private void StartTimer()
+  {
+    timer?.Dispose();
+    timer = new Timer(async _ =>
+    {
+      if (!cts?.Token.IsCancellationRequested ?? false)
+      {
+        await InvokeAsync(() =>
+    {
+      NextSlide();
+      StateHasChanged();
+    });
+      }
+    }, null, 5000, 5000);
+  }
+
+  private void NextSlide()
+  {
+    currentSlide = (currentSlide + 1) % 2;
+    StartTimer();
+  }
+
+  private void PreviousSlide()
+  {
+    currentSlide = currentSlide == 0 ? 1 : 0;
+    StartTimer();
+  }
+  private void Results() => Navigation.NavigateTo("/results");
+  private void Events() => Navigation.NavigateTo("/events");
+
+  public void Dispose()
+  {
+    cts?.Cancel();
+    cts?.Dispose();
+    timer?.Dispose();
+  }
+}
