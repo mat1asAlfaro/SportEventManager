@@ -4,11 +4,7 @@
   "libraries": [
     {
       "library": "bootstrap@5.3.8",
-      "destination": "wwwroot/lib/bootstrap",
-      "files": [
-        "dist/css/bootstrap.min.css",
-        "dist/js/bootstrap.bundle.min.js"
-      ]
+      "destination": "wwwroot/lib/bootstrap"
     }
   ]
 }
