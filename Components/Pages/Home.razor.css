@@ -1,4 +1,4 @@
-/* SECCIÓN - Banner */
+/* Banner */
 .full-width-section {
   width: 100vw;
   position: relative;
@@ -7,45 +7,85 @@
 }
 
 .banner-section {
-  min-height: 600px;
-  background: url('assets/images/home-background.jpg');
-  background-position: center center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  min-height: 40rem;
+  background: url('assets/images/home-background.jpg') center/cover no-repeat;
   margin-top: -1.1rem;
 }
 
 .trophy-icon-border {
-  width: 65px;
-  height: 65px;
+  width: 4rem;
+  height: 4rem;
 }
 
 .banner-subtitle {
   font-size: clamp(0.8rem, 1.8vw, 1.25rem);
-  max-width: 700px;
+  max-width: 45rem;
   line-height: 1.5;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
-  transition: all 0.3s ease;
+/* Botones carousel */
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: rgb(255, 255, 255);
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
 }
 
-/* SECCIÓN - ¿Qué puedes consultar? */
+.carousel-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.carousel-btn.left {
+  left: 1.25rem;
+}
+
+.carousel-btn.right {
+  right: 1.25rem;
+}
+
+/* Indicadores carousel*/
+.carousel-dots {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.6rem;
+  z-index: 10;
+}
+
+.carousel-dots button {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 2px solid rgb(255, 255, 255);
+  background: transparent;
+  cursor: pointer;
+}
+
+.carousel-dots button.active {
+  background: rgb(255, 255, 255);
+}
+
+/* Secciones */
 .consult-section {
   background-color: var(--color-main-background);
 }
 
-/* SECCION - ¿Cómo funciona? */
 .how-it-works-section {
   background-color: var(--color-card-background);
 }
 
 .step-number {
-  width: clamp(40px, 8vw, 60px);
-  height: clamp(40px, 8vw, 60px);
-  aspect-ratio: 1 / 1;
+  width: clamp(2.5rem, 8vw, 3.75rem);
+  height: clamp(2.5rem, 8vw, 3.75rem);
   background-color: var(--color-secondary);
   font-weight: bold;
   font-size: 1.5rem;
@@ -53,6 +93,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .steps-wrapper {
@@ -60,20 +101,19 @@
   margin: 0 auto;
 }
 
-/* SECCIÓN - Consulta tus resultados */
 .results-call-section {
   background-color: var(--color-main-background);
 }
 
 .results-call-card {
   background-color: var(--color-card-background);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 1rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3);
 }
 
 .results-border {
-  width: 80px;
-  height: 80px;
+  width: 5rem;
+  height: 5rem;
   border-radius: 50%;
   background-color: var(--color-primary);
   display: flex;

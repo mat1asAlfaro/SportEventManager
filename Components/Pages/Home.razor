@@ -1,28 +1,62 @@
 @page "/"
 @rendermode InteractiveServer
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Home</PageTitle>
 
 <!-- SECCIÓN - Banner -->
 <div class="banner-section position-relative d-flex align-items-center justify-content-center full-width-section">
   <div class="banner-overlay position-absolute top-0 start-0 w-100 h-100 bg-black opacity-75"></div>
+
+  <!-- Contenido -->
   <div class="banner-content position-relative py-5">
     <div class="container-lg px-4 px-sm-5 px-lg-4">
-      <div class="text-center text-white">
-        <div class="trophy-icon-border d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4">
-          <span class="material-symbols-outlined fs-1">trophy</span>
-        </div>
-        <h1 class="fw-bold mb-3 banner-title">Consulta tus Resultados</h1>
-        <p class="text-secondary mb-4 mx-auto banner-subtitle">Ingresa tu número de dorsal para ver tu rendimiento detallado en cada punto de control de la carrera</p>
-        <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
-          @onclick="Results">
-          <span class="material-symbols-outlined fs-4">search</span>
-          Buscar mis Resultados
-        </button>
+      <div class="text-center text-primary">
+        @if (currentSlide == 0)
+        {
+          <div class="trophy-icon-border d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4">
+            <span class="material-symbols-outlined fs-1">trophy</span>
+          </div>
+          <h1 class="fw-bold mb-3 banner-title">Consulta tus Resultados</h1>
+          <p class="text-secondary mb-4 mx-auto banner-subtitle">Ingresa tu número de dorsal para ver tu rendimiento detallado en cada punto de control de la carrera</p>
+          <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            @onclick="Results">
+            <span class="material-symbols-outlined fs-4">search</span>
+            Buscar mis Resultados
+          </button>
+        }
+        else
+        {
+          <div
+            class="trophy-icon-border d-inline-flex align-items-center justify-content-center bg-success rounded-4 mb-4">
+            <span class="material-symbols-outlined fs-1">event_available</span>
+          </div>
+          <h1 class="fw-bold mb-3 banner-title">Inscríbete a tu Próxima Carrera</h1>
+          <p class="text-secondary mb-4 mx-auto banner-subtitle">Únete a miles de corredores y vive la experiencia de competir en eventos deportivos únicos</p>
+          <button class="btn btn-success btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            @onclick="Events">
+            <span class="material-symbols-outlined fs-4">directions_run</span>
+            Ver Eventos Disponibles
+          </button>
+        }
       </div>
     </div>
-  </div>  
+  </div>
+
+  <!-- Controles -->
+  <button class="carousel-btn left" @onclick="PreviousSlide">
+    <span class="material-symbols-outlined">chevron_left</span>
+  </button>
+  <button class="carousel-btn right" @onclick="NextSlide">
+    <span class="material-symbols-outlined">chevron_right</span>
+  </button>
+
+  <!-- Indicadores -->
+  <div class="carousel-dots">
+    <button class="@(currentSlide == 0 ? "active" : "")" @onclick="() => currentSlide = 0"></button>
+    <button class="@(currentSlide == 1 ? "active" : "")" @onclick="() => currentSlide = 1"></button>
+  </div>
 </div>
 
 <!-- SECCIÓN - ¿Qué puedes consultar? -->
@@ -117,8 +151,50 @@
 </section>
 
 @code {
-    private void Results()
+  private int currentSlide = 0;
+  private Timer? timer;
+  private CancellationTokenSource? cts;
+
+  protected override void OnInitialized()
+  {
+    cts = new CancellationTokenSource();
+    StartTimer();
+  }
+
+  private void StartTimer()
+  {
+    timer?.Dispose();
+    timer = new Timer(async _ =>
     {
-        Navigation.NavigateTo("/results");
-    }
+      if (!cts?.Token.IsCancellationRequested ?? false)
+      {
+        await InvokeAsync(() =>
+    {
+      NextSlide();
+      StateHasChanged();
+    });
+      }
+    }, null, 5000, 5000);
+  }
+
+  private void NextSlide()
+  {
+    currentSlide = (currentSlide + 1) % 2;
+    StartTimer();
+  }
+
+  private void PreviousSlide()
+  {
+    currentSlide = currentSlide == 0 ? 1 : 0;
+    StartTimer();
+  }
+  private void Results() => Navigation.NavigateTo("/results");
+  private void Events() => Navigation.NavigateTo("/events");
+
+  public void Dispose()
+  {
+    cts?.Cancel();
+    cts?.Dispose();
+    timer?.Dispose();
+  }
 }

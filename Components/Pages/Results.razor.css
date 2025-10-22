@@ -3,15 +3,15 @@
 }
 
 .leaderboard-icon-border {
-  width: 65px;
-  height: 65px;
+  width: 4rem;
+  height: 4rem;
 }
 
 .search-container {
   background-color: var(--color-card-background);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  max-width: 600px;
+  border-radius: 0.75rem;
+  max-width: 40rem;
   margin: 0 auto;
 }
 
