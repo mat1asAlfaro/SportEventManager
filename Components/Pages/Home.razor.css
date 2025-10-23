@@ -1,6 +1,6 @@
 /* Banner */
 .full-width-section {
-  width: 100vw;
+  width: 99.19vw;
   position: relative;
   left: 50%;
   margin-left: -50vw;
@@ -8,7 +8,7 @@
 
 .banner-section {
   min-height: 40rem;
-  background: url("assets/images/home-background.jpg") center/cover no-repeat;
+  background: url("assets/images/home-background.jpg") center no-repeat;
   margin-top: -1.1rem;
 }
 
