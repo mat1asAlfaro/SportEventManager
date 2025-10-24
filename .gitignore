@@ -8,6 +8,8 @@ out/
 *.suo
 *.userosscache
 *.sln.docstates
+.vs/
+.config/
 
 ## ASP.NET Scaffolding
 ScaffoldingReadMe.txt
@@ -46,6 +48,9 @@ paket-files/
 ## WebAssembly specific
 wwwroot/css/app.css
 wwwroot/css/app.css.map
+
+## Third-party libraries (managed by LibMan)
+wwwroot/lib/
 
 # Node-related (if using npm/yarn for front-end tooling)
 node_modules/
