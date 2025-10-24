@@ -2,7 +2,7 @@
 @using SportEventManager.DTOs
 @inherits LayoutComponentBase
 
-<div class="card shadow-sm mt-2">
+<div class="card event-card shadow-sm mt-2">
   <!-- Header -->
   <div class="card-header">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2">
@@ -54,7 +54,7 @@
 
       @if (Event.Races.Any())
       {
-        <div class="d-flex flex-column gap-2 overflow-auto">
+        <div class="d-flex flex-column gap-2 @GetScrollClassForRaces()">
           @foreach (var race in Event.Races)
           {
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start border p-2 gap-2">
@@ -122,8 +122,9 @@
       }
       else
       {
-        <div class="border text-center py-3 text-secondary small">
-          No hay carreras. Agrega la primera carrera.
+        <div class="d-flex justify-content-center align-items-center border text-center py-3 text-secondary small"
+          style="height: 109px;">
+          <span>No hay carreras. Agrega la primera carrera.</span>
         </div>
       }
     </div>
@@ -159,5 +160,10 @@
   private string GetCategoryStatusBadgeClass()
   {
     return "status-badge-category";
+  }
+
+  private string GetScrollClassForRaces()
+  {
+    return Event.Races.Count() > 2 ? "scrollable-races" : "";
   }
 }

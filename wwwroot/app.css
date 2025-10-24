@@ -87,6 +87,19 @@ h1:focus {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
 }
 
+.event-card {
+  height: 486px;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollable-races {
+  max-height: 226px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
 .material-symbols-outlined {
   font-size: 1.4rem;
   vertical-align: middle;
@@ -237,16 +250,19 @@ select.form-select {
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-.split-scroll::-webkit-scrollbar {
+.split-scroll::-webkit-scrollbar,
+.scrollable-races::-webkit-scrollbar {
   width: 6px;
 }
 
-.split-scroll::-webkit-scrollbar-thumb {
+.split-scroll::-webkit-scrollbar-thumb,
+.scrollable-races::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
-.split-scroll::-webkit-scrollbar-thumb:hover {
+.split-scroll::-webkit-scrollbar-thumb:hover,
+.scrollable-races::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.6);
 }
 
