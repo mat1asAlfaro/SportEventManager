@@ -12,101 +12,107 @@ namespace SportEventManager.Data
 {
     public class EventRepository : IEventRepository
     {
-        private readonly SportEventDbContext _context;
+        private readonly IDbContextFactory<SportEventDbContext> _contextFactory;
 
-        public EventRepository(SportEventDbContext context)
+        public EventRepository(IDbContextFactory<SportEventDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task<List<Event>> GetAllEventsAsync()
         {
+            await using var _context = _contextFactory.CreateDbContext();
             return await Task.FromResult(_context.Events.ToList());
         }
 
         public async Task<Event?> GetEventByIdAsync(int eventId)
         {
+            await using var _context = _contextFactory.CreateDbContext();
             var evnt = _context.Events.FirstOrDefault(e => e.EventId == eventId);
             return await Task.FromResult(evnt);
         }
 
         public async Task<List<EventDTO>> GetAllEventsWithRacesAndSplitsAsync()
         {
-            return await _context.Events
-                .Select(e => new EventDTO
-                {
-                    EventId = e.EventId,
-                    Name = e.Name,
-                    Description = e.Description,
-                    StartDate = e.StartDate,
-                    EndDate = e.EndDate,
-                    Location = e.Location,
+            await using var _context = _contextFactory.CreateDbContext();
 
-                    TotalParticipantsRegistration = _context.Registrations
-                        .Where(r => _context.Races
-                            .Where(ra => ra.EventId == e.EventId)
-                            .Select(ra => ra.RaceId)
-                            .Contains(r.RaceId))
-                        .Select(r => r.ParticipantId)
+            var events = await _context.Events
+                .Include(e => e.Races)
+                    .ThenInclude(r => r.RaceCategories!)
+                        .ThenInclude(rc => rc.Category)
+                .Include(e => e.Races)
+                    .ThenInclude(r => r.Splits)
+                .ToListAsync();
+
+            return events.Select(e => new EventDTO
+            {
+                EventId = e.EventId,
+                Name = e.Name,
+                Description = e.Description,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                Location = e.Location,
+                TotalParticipantsRegistration = _context.Registrations
+            .Where(r => e.Races.Select(ra => ra.RaceId).Contains(r.RaceId))
+            .Select(r => r.ParticipantId)
+            .Distinct()
+            .Count(),
+                Races = e.Races.Select(race => new RaceDTO
+                {
+                    RaceId = race.RaceId,
+                    EventId = race.EventId,
+                    Name = race.Name,
+                    DistanceKm = race.DistanceKm,
+                    MaxParticipants = race.MaxParticipants,
+                    StartTime = race.StartTime,
+                    TotalParticipantRegistration = _context.Registrations
+                        .Where(reg => reg.RaceId == race.RaceId)
+                        .Select(reg => reg.ParticipantId)
                         .Distinct()
                         .Count(),
-
-                    Races = _context.Races
-                        .Where(race => race.EventId == e.EventId)
-                        .Select(race => new RaceDTO
+                    RaceCategories = race?.RaceCategories?.Select(rc => new RaceCategoryDTO
+                    {
+                        RaceId = rc.RaceId,
+                        CategoryId = rc.CategoryId,
+                        Category = rc.Category == null ? null : new CategoryDTO
                         {
-                            RaceId = race.RaceId,
-                            Name = race.Name,
-                            DistanceKm = race.DistanceKm,
-                            MaxParticipants = race.MaxParticipants,
-                            StartTime = race.StartTime,
-
-                            TotalParticipantRegistration = _context.Registrations
-                                .Where(reg => reg.RaceId == race.RaceId)
-                                .Select(reg => reg.ParticipantId)
-                                .Distinct()
-                                .Count(),
-
-                            Splits = _context.Splits
-                                .Where(split => split.RaceId == race.RaceId)
-                                .OrderBy(split => split.KmMark)
-                                .Select(split => new SplitDTO
-                                {
-                                    SplitId = split.SplitId,
-                                    SplitName = split.SplitName,
-                                    KmMark = split.KmMark
-                                })
-                                .ToList()
-                        })
-                        .ToList()
-
-                })
-                .ToListAsync();
+                            CategoryId = rc.Category.CategoryId,
+                            ExternalName = rc.Category.ExternalName,
+                            InternalName = rc.Category.InternalName,
+                            Gender = rc.Category.Gender,
+                            MinAge = rc.Category.MinAge,
+                            MaxAge = rc.Category.MaxAge
+                        }
+                    }).ToList(),
+                    Splits = race?.Splits?
+                        .OrderBy(split => split.KmMark)
+                        .Select(split => new SplitDTO
+                        {
+                            SplitId = split.SplitId,
+                            SplitName = split.SplitName,
+                            KmMark = split.KmMark
+                        }).ToList()
+                }).ToList()
+            }).ToList();
         }
 
         public async Task AddEventAsync(Event evnt)
         {
+            await using var _context = _contextFactory.CreateDbContext();
             _context.Events.Add(evnt);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateEventAsync(Event evnt)
         {
-            var existingEvent = _context.Events.FirstOrDefault(e => e.EventId == evnt.EventId);
-            if (existingEvent != null)
-            {
-                existingEvent.Name = evnt.Name;
-                existingEvent.Description = evnt.Description;
-                existingEvent.StartDate = evnt.StartDate;
-                existingEvent.EndDate = evnt.EndDate;
-                existingEvent.Location = evnt.Location;
-
-                await _context.SaveChangesAsync();
-            }
+            await using var _context = _contextFactory.CreateDbContext();
+            _context.Events.Update(evnt);
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteEventAsync(int eventId)
         {
+            await using var _context = _contextFactory.CreateDbContext();
             var evnt = _context.Events.FirstOrDefault(e => e.EventId == eventId);
             if (evnt != null)
             {

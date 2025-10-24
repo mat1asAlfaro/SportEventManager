@@ -18,10 +18,10 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 builder.Services.AddScoped<ISplitRepository, SplitRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-builder.Services.AddDbContext<SportEventDbContext>(Options =>
-    Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+builder.Services.AddDbContextFactory<SportEventDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 

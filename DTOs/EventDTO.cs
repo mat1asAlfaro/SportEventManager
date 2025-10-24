@@ -15,5 +15,18 @@ namespace SportEventManager.DTOs
         public string? Location { get; set; }
         public int TotalParticipantsRegistration { get; set; }
         public List<RaceDTO> Races { get; set; } = new();
+
+        public string StatusLabel
+        {
+            get
+            {
+                var now = DateTime.Now;
+                var diff = StartDate - now;
+
+                if (StartDate < now) return "Finalizado";
+                if (diff.TotalDays <= 30) return "Próximo";
+                return "Confirmado";
+            }
+        }
     }
 }

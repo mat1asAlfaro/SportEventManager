@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251019104737_UpdateCategoryModel")]
+    partial class UpdateCategoryModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -422,7 +425,12 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RaceId = 1,
-                            CategoryId = 3
+                            CategoryId = 1
+                        },
+                        new
+                        {
+                            RaceId = 1,
+                            CategoryId = 2
                         },
                         new
                         {
@@ -474,7 +482,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 1,
-                            CategoryId = 3,
+                            CategoryId = 1,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 1,
                             RaceId = 1,
@@ -483,7 +491,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 2,
-                            CategoryId = 3,
+                            CategoryId = 2,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 2,
                             RaceId = 1,
@@ -510,7 +518,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 5,
-                            CategoryId = 3,
+                            CategoryId = 1,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 5,
                             RaceId = 1,
@@ -519,7 +527,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 6,
-                            CategoryId = 3,
+                            CategoryId = 2,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 6,
                             RaceId = 1,
@@ -546,7 +554,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 9,
-                            CategoryId = 3,
+                            CategoryId = 1,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 9,
                             RaceId = 1,
@@ -555,7 +563,7 @@ namespace SportEventManager.Migrations
                         new
                         {
                             RegistrationId = 10,
-                            CategoryId = 3,
+                            CategoryId = 2,
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             ParticipantId = 10,
                             RaceId = 1,

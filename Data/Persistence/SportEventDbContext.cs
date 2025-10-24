@@ -115,7 +115,7 @@ namespace SportEventManager.Data.Persistence
                 .HasIndex(r => r.Name);
 
             modelBuilder.Entity<Category>()
-                .HasIndex(c => c.Name);
+                .HasIndex(c => c.InternalName);
 
             modelBuilder.Entity<Participant>()
                 .HasIndex(p => new { p.LastName, p.FirstName });
@@ -135,15 +135,15 @@ namespace SportEventManager.Data.Persistence
             );
 
             modelBuilder.Entity<Category>().HasData(
-                new Category { CategoryId = 1, Name = "Adultos Masculino", Gender = "M", MinAge = 18, MaxAge = 40 },
-                new Category { CategoryId = 2, Name = "Adultos Femenino", Gender = "F", MinAge = 18, MaxAge = 40 },
-                new Category { CategoryId = 3, Name = "Junior Masculino", Gender = "M", MinAge = 14, MaxAge = 17 },
-                new Category { CategoryId = 4, Name = "Junior Femenino", Gender = "F", MinAge = 14, MaxAge = 17 }
+                new Category { CategoryId = 1, InternalName = "Caballeros - Mayores", ExternalName = "Caballeros Mayores (18 años o más)", Gender = "M", MinAge = 18, MaxAge = null },
+                new Category { CategoryId = 2, InternalName = "Damas - Mayores", ExternalName = "Damas Mayores (18 años o más)", Gender = "F", MinAge = 18, MaxAge = null },
+                new Category { CategoryId = 3, InternalName = "Mixtos - Mayores", ExternalName = "Mixtos Mayores", Gender = "X", MinAge = 18, MaxAge = null },
+                new Category { CategoryId = 4, InternalName = "Juveniles - Mixtos", ExternalName = "Juveniles (12 - 17 años)", Gender = "X", MinAge = 12, MaxAge = 17 },
+                new Category { CategoryId = 5, InternalName = "Infantiles", ExternalName = "Infantiles (hasta 11 años)", Gender = "X", MinAge = 0, MaxAge = 11 }
             );
 
             modelBuilder.Entity<RaceCategory>().HasData(
-                new RaceCategory { RaceId = 1, CategoryId = 1 },
-                new RaceCategory { RaceId = 1, CategoryId = 2 },
+                new RaceCategory { RaceId = 1, CategoryId = 3 },
                 new RaceCategory { RaceId = 2, CategoryId = 3 },
                 new RaceCategory { RaceId = 2, CategoryId = 4 }
             );
@@ -162,16 +162,16 @@ namespace SportEventManager.Data.Persistence
             );
 
             modelBuilder.Entity<Registration>().HasData(
-                new Registration { RegistrationId = 1, ParticipantId = 1, RaceId = 1, CategoryId = 1, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
-                new Registration { RegistrationId = 2, ParticipantId = 2, RaceId = 1, CategoryId = 2, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
+                new Registration { RegistrationId = 1, ParticipantId = 1, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
+                new Registration { RegistrationId = 2, ParticipantId = 2, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
                 new Registration { RegistrationId = 3, ParticipantId = 3, RaceId = 2, CategoryId = 3, Status = "Pending", CreatedAt = new DateTime(2025, 10, 15) },
                 new Registration { RegistrationId = 4, ParticipantId = 4, RaceId = 2, CategoryId = 4, Status = "Pending", CreatedAt = new DateTime(2025, 10, 15) },
-                new Registration { RegistrationId = 5, ParticipantId = 5, RaceId = 1, CategoryId = 1, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
-                new Registration { RegistrationId = 6, ParticipantId = 6, RaceId = 1, CategoryId = 2, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
+                new Registration { RegistrationId = 5, ParticipantId = 5, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
+                new Registration { RegistrationId = 6, ParticipantId = 6, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
                 new Registration { RegistrationId = 7, ParticipantId = 7, RaceId = 2, CategoryId = 3, Status = "Pending", CreatedAt = new DateTime(2025, 10, 15) },
                 new Registration { RegistrationId = 8, ParticipantId = 8, RaceId = 2, CategoryId = 4, Status = "Pending", CreatedAt = new DateTime(2025, 10, 15) },
-                new Registration { RegistrationId = 9, ParticipantId = 9, RaceId = 1, CategoryId = 1, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
-                new Registration { RegistrationId = 10, ParticipantId = 10, RaceId = 1, CategoryId = 2, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) }
+                new Registration { RegistrationId = 9, ParticipantId = 9, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) },
+                new Registration { RegistrationId = 10, ParticipantId = 10, RaceId = 1, CategoryId = 3, Status = "Confirmed", CreatedAt = new DateTime(2025, 10, 15) }
             );
 
             modelBuilder.Entity<Chip>().HasData(

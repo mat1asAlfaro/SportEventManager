@@ -2,20 +2,22 @@
 @using SportEventManager.DTOs
 @inherits LayoutComponentBase
 
-<div class="card shadow-sm mt-3">
+<div class="card event-card shadow-sm mt-2">
   <!-- Header -->
   <div class="card-header">
-    <div class="d-flex justify-content-between align-items-start">
-      <div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2">
+      <div class="flex-grow-1 text-truncate">
         <h5 class="mb-2 fw-semibold" style="font-size: 18px">@Event.Name</h5>
-        <span class="badge @GetStatusBadgeClass()">@GetStatusLabel()</span>
+        <span class="badge @GetEventStatusBadgeClass()">@GetEventStatusLabel()</span>
       </div>
 
-      <div class="d-flex gap-1">
-        <button class="btn btn-sm text-secondary p-1" @onclick="() => OnEdit.InvokeAsync(Event.EventId)">
+      <div class="d-flex gap-1 flex-wrap">
+        <button class="btn btn-sm text-secondary p-1" @onclick="() => OnEdit.InvokeAsync(Event.EventId)"
+          title="Editar Evento">
           <span class="material-symbols-outlined fs-5">edit_square</span>
         </button>
-        <button class="btn btn-sm text-error p-1" @onclick="() => OnDelete.InvokeAsync(Event.EventId)">
+        <button class="btn btn-sm text-error p-1" @onclick="() => OnDelete.InvokeAsync(Event.EventId)"
+          title="Eliminar Evento">
           <span class="material-symbols-outlined fs-5">delete</span>
         </button>
       </div>
@@ -23,27 +25,28 @@
   </div>
 
   <!-- Body -->
-  <div class="card-body pt-4">
+  <div class="card-body d-flex flex-column pt-4">
     <div class="mb-3">
-      <div class="d-flex align-items-center text-secondary small mb-2">
-        <span class="material-symbols-outlined me-3 fs-5">calendar_today</span>
+      <div class="d-flex flex-row flex-sm-col align-items-start align-items-sm-center text-secondary small mb-2 gap-2">
+        <span class="material-symbols-outlined fs-5">calendar_today</span>
         <span>@Event.StartDate.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
       </div>
-      <div class="d-flex align-items-center text-secondary small mb-2">
-        <span class="material-symbols-outlined me-3 fs-5">location_on</span>
+      <div class="d-flex flex-row flex-sm-col align-items-start align-items-sm-center text-secondary small mb-2 gap-2">
+        <span class="material-symbols-outlined fs-5">location_on</span>
         <span>@Event.Location</span>
       </div>
-      <div class="d-flex align-items-center text-secondary small">
-        <span class="material-symbols-outlined me-3 fs-5">group</span>
+      <div class="d-flex flex-row flex-sm-col align-items-start align-items-sm-center text-secondary small gap-2">
+        <span class="material-symbols-outlined fs-5">group</span>
         <span>@Event.TotalParticipantsRegistration corredores inscriptos</span>
       </div>
     </div>
 
     <!-- Races Section -->
     <div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0 fw-semibold">Carreras (@Event.Races.Count())</h6>
-        <button class="btn btn-sm d-flex align-items-center fw-semibold text-primary"
+      <div
+        class="d-flex flex-row flex-sm-col justify-content-between align-items-start align-items-sm-center mb-2 gap-2">
+        <h6 class="mb-0 fw-semibold py-1">Carreras (@Event.Races.Count())</h6>
+        <button class="btn btn-sm d-flex align-items-center fw-semibold text-primary" title="Agregar Carrera"
           @onclick="() => OnAddRace.InvokeAsync(Event.EventId)">
           <span class="material-symbols-outlined me-1 fs-5">add</span> Agregar
         </button>
@@ -51,14 +54,23 @@
 
       @if (Event.Races.Any())
       {
-        <div class="d-flex flex-column gap-2">
+        <div class="d-flex flex-column gap-2 @GetScrollClassForRaces()">
           @foreach (var race in Event.Races)
           {
-            <div class="d-flex justify-content-between align-items-start border p-2">
-              <div class="d-flex align-items-start gap-2">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start border p-2 gap-2">
+              <div class="d-flex align-items-start gap-2 flex-grow-1">
                 <span class="material-symbols-outlined text-primary fs-5 mt-1">emoji_events</span>
-                <div>
-                  <div class="fw-semibold small">@race.Name</div>
+                <div class="flex-grow-1 text-truncate">
+                  <div class="d-flex flex-wrap align-items-center gap-2 fw-semibold mb-1">
+                    <div>@race.Name</div>
+                    @if (race.RaceCategories!.Any())
+                    {
+                      @foreach (var rc in race.RaceCategories!)
+                      {
+                        <span class="badge @GetCategoryStatusBadgeClass() text-truncate">@rc.Category!.ExternalName</span>
+                      }
+                    }
+                  </div>
                   <div class="text-secondary small">
                     @race.DistanceKm km • @race.TotalParticipantRegistration @(race.TotalParticipantRegistration == 1 ?
                     "inscripto" : "inscriptos") / @race.MaxParticipants máx
@@ -66,19 +78,40 @@
                   <div class="text-secondary small">
                     Hora inicio: @race.StartTime.ToString("HH:mm 'hs'")
                   </div>
+                  <div class="text-secondary small">
+                    @if (race.Splits != null)
+                    {
+                      if (race.Splits.Count > 1)
+                      {
+                        <span>@race.Splits.Count puntos de control</span>
+                      }
+                      else if (race.Splits.Count == 1)
+                      {
+                        <span>1 punto de control</span>
+                      }
+                      else
+                      {
+                        <span>Sin puntos de control</span>
+                      }
+                    }
+                    else
+                    {
+                      <span>Sin puntos de control</span>
+                    }
+                  </div>
                 </div>
               </div>
 
-              <div class="d-flex gap-1">
-                <button class="btn btn-sm text-secondary p-1 mt-1" title="Puntos de Control"
+              <div class="d-flex gap-1 flex-wrap mt-2 mt-md-0">
+                <button class="btn btn-sm text-secondary p-1" title="Puntos de Control"
                   @onclick="() => OnAddSplit.InvokeAsync((Event.EventId, race.RaceId))">
                   <span class="material-symbols-outlined fs-5">location_on</span>
                 </button>
-                <button class="btn btn-sm text-secondary p-1 mt-1"
+                <button class="btn btn-sm text-secondary p-1" title="Editar Carrera"
                   @onclick="() => OnEditRace.InvokeAsync((Event.EventId, race.RaceId))">
                   <span class="material-symbols-outlined fs-5">edit_square</span>
                 </button>
-                <button class="btn btn-sm text-error p-1 mt-1"
+                <button class="btn btn-sm text-error p-1" title="Eliminar Carrera"
                   @onclick="() => OnDeleteRace.InvokeAsync((Event.EventId, race.RaceId))">
                   <span class="material-symbols-outlined fs-5">delete</span>
                 </button>
@@ -89,8 +122,9 @@
       }
       else
       {
-        <div class="border text-center py-3 text-secondary small">
-          No hay carreras. Agrega la primera carrera.
+        <div class="d-flex justify-content-center align-items-center border text-center py-3 text-secondary small"
+          style="height: 109px;">
+          <span>No hay carreras. Agrega la primera carrera.</span>
         </div>
       }
     </div>
@@ -107,23 +141,29 @@
   [Parameter] public EventCallback<(int EventId, int RaceId)> OnEditRace { get; set; }
   [Parameter] public EventCallback<(int EventId, int RaceId)> OnDeleteRace { get; set; }
 
-  private string GetStatusLabel()
+  private string GetEventStatusLabel()
   {
-    var now = DateTime.Now;
-    var diff = Event.StartDate - now;
-
-    if (Event.StartDate < now) return "Finalizado";
-    if (diff.TotalDays <= 30) return "Próximo";
-    return "Confirmado";
+    return Event.StatusLabel;
   }
 
-  private string GetStatusBadgeClass()
+  private string GetEventStatusBadgeClass()
   {
-    var now = DateTime.Now;
-    var diff = Event.StartDate - now;
+    return Event.StatusLabel switch
+    {
+      "Finalizado" => "status-badge-finalized",
+      "Próximo" => "status-badge-upcoming",
+      "Confirmado" => "status-badge-confirmed",
+      _ => "status-badge-default"
+    };
+  }
 
-    if (Event.StartDate < now) return "status-badge-finalized";
-    if (diff.TotalDays <= 30) return "status-badge-upcoming";
-    return "status-badge-confirmed";
+  private string GetCategoryStatusBadgeClass()
+  {
+    return "status-badge-category";
+  }
+
+  private string GetScrollClassForRaces()
+  {
+    return Event.Races.Count() > 2 ? "scrollable-races" : "";
   }
 }
