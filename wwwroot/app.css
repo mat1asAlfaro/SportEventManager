@@ -82,7 +82,7 @@ h1:focus {
 .stats-card {
   background-color: var(--color-card-background) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 0.75rem;
+  border-radius: 0.75rem !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -126,11 +126,10 @@ h1:focus {
 
 .badge {
   display: inline-block;
-  padding: 0.35rem 0.9rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  border: none;
+  padding: 0.25rem 0.7rem;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  font-size: 0.8rem;
 }
 
 .status-badge-finalized {
@@ -151,6 +150,13 @@ h1:focus {
   border: 1px solid var(--color-success);
 }
 
+.status-badge-category {
+  background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  margin-right: 0.25rem;
+}
+
 .btn:hover {
   color: inherit !important;
 }
@@ -168,13 +174,19 @@ h1:focus {
   border-top: 1px solid var(--color-border) !important;
 }
 
-.form-control {
+select.form-select {
+  cursor: pointer;
+}
+
+.form-control,
+.form-select {
   background-color: var(--color-input-background);
   border: 1px solid var(--color-border) !important;
   color: var(--color-secondary-text);
 }
 
-.form-control:focus {
+.form-control:focus,
+.form-select:focus {
   background-color: color-mix(
     in srgb,
     var(--color-input-background) 90%,
@@ -183,6 +195,27 @@ h1:focus {
   color: inherit;
   border-color: none;
   box-shadow: none;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2rem;
+}
+
+.select-wrapper .select-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-primary-text);
+  font-size: 20px;
 }
 
 .custom-datetime::-webkit-calendar-picker-indicator {

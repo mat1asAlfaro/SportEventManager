@@ -8,10 +8,15 @@
 @using SportEventManager.Models
 @using System.Runtime.InteropServices
 @using System.Linq
+@using System.Runtime.Versioning
+@using System.Timers
+@using System.Text
+@using System.Globalization
 @rendermode InteractiveServer
 @inject IEventRepository EventRepository
 @inject IRaceRepository RaceRepository
 @inject ISplitRepository SplitRepository;
+@inject ICategoryRepository CategoryRepository;
 @inject IJSRuntime JS
 
 <PageTitle>Eventos</PageTitle>
@@ -35,6 +40,57 @@
       <AddEventModal @ref="addEventModal" OnSave="HandleSaveAddEvent" />
     </div>
 
+    @* Filters *@
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-4">
+          <span class="material-symbols-outlined me-2 text-secondary fs-5">filter_list</span>
+          <h5 class="fw-semibold mb-0">Filtros</h5>
+          <button class="btn btn-sm btn-outline-secondary ms-auto" @onclick="ResetFilters" title="Restablecer Filtros">
+            <span class="material-symbols-outlined text-secondary fs-5">autorenew</span>
+          </button>
+        </div>
+
+        <div class="d-flex flex-wrap gap-4 justify-content-between">
+          <div class="flex-grow-1" style="min-width: 250px; max-width: 300px;">
+            <div class="d-flex flex-column">
+              <h6 class="fw-semibold mb-2">Buscar</h6>
+              <div class="position-relative">
+                <span
+                  class="material-symbols-outlined text-secondary position-absolute top-50 translate-middle-y ms-3">search</span>
+                <input type="text" class="form-control ps-5 placeholder-white" placeholder="Nombre o ubicación..."
+                  value="@searchText" @oninput="OnSearchTextChanged" />
+              </div>
+            </div>
+          </div>
+          <div class="flex-grow-1" style="min-width: 250px; max-width: 300px;">
+            <div class="position-relative">
+              <h6 class="fw-semibold mb-2">Estado</h6>
+              <select class="form-select" @bind="selectedStatus" @bind:after="ApplyFilters">
+                <option selected>Todos los estados</option>
+                <option value="Próximo">Próximos</option>
+                <option value="Confirmado">Confirmados</option>
+                <option value="Finalizado">Finalizados</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex-grow-1" style="min-width: 250px; max-width: 300px;">
+            <div class="d-flex flex-column">
+              <h6 class="fw-semibold mb-2">Categoría de Carrera</h6>
+              <select class="form-select" @bind="selectedCategory" @bind:after="ApplyFilters">
+                <option selected>Todas las categorías</option>
+                @foreach (var cat in categoryNames)
+                {
+                  <option>@cat</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     @* Stats Cards *@
     <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
       <div class="col">
@@ -51,26 +107,28 @@
       </div>
     </div>
 
-    @* Event Grid *@
-    @if (events.Any())
-    {
-      <div class="row row-cols-1 row-cols-lg-2 g-4">
-        @foreach (var ev in events)
-        {
-          <div class="col">
-            <EventCard Event="ev" OnEdit=" HandleEditEvent" OnDelete="HandleDeleteEvent" OnAddRace="HandleAddRace"
-              OnAddSplit="HandleAddSplit" OnDeleteSplit="HandleDeleteSplitAsync" OnEditRace="HandleEditRace"
-              OnDeleteRace="HandleDeleteRace" />
-          </div>
-        }
-      </div>
-    }
-    else
-    {
-      <div class="text-center text-secondary py-5">
-        No hay eventos registrados.
-      </div>
-    }
+    <div class="mb-0">
+      @* Event Grid *@
+      @if (events.Any())
+      {
+        <div class="row row-cols-1 row-cols-lg-2 g-4">
+          @foreach (var ev in events)
+          {
+            <div class="col">
+              <EventCard Event="ev" OnEdit=" HandleEditEvent" OnDelete="HandleDeleteEvent" OnAddRace="HandleAddRace"
+                OnAddSplit="HandleAddSplit" OnDeleteSplit="HandleDeleteSplitAsync" OnEditRace="HandleEditRace"
+                OnDeleteRace="HandleDeleteRace" />
+            </div>
+          }
+        </div>
+      }
+      else
+      {
+        <div class="text-center text-secondary py-5">
+          No hay eventos registrados.
+        </div>
+      }
+    </div>
 
     @* Modals *@
     <EditEventModal @ref="editEventModal" OnSave="HandleSaveEditEvent" />
@@ -94,6 +152,7 @@
 @code {
   private AddEventModal? addEventModal;
   private List<EventDTO> events = new();
+  private List<string> categoryNames = new();
   private int totalCountRaces;
   private int totalCountParticipants;
   private EditEventModal? editEventModal;
@@ -107,12 +166,22 @@
   private string selectedRaceName = string.Empty;
   private int selectedRaceId;
   private int selectedEventIdForRace;
+  private List<EventDTO> eventsOriginal = new();
+  private string searchText = string.Empty;
+  private string selectedStatus = "Todos los estados";
+  private string selectedCategory = "Todas las categorías";
+  private Timer? searchTimer;
 
   protected override async Task OnInitializedAsync()
   {
     events = (await EventRepository.GetAllEventsWithRacesAndSplitsAsync()).ToList();
+    eventsOriginal = new List<EventDTO>(events);
+
     totalCountRaces = events.Sum(e => e.Races.Count);
     totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
+
+    var categories = (await CategoryRepository.GetAllCategoriesAsync()).ToList();
+    categoryNames = categories.Select(c => c.ExternalName!).ToList();
   }
 
   private void ShowAddEventModal()
@@ -248,10 +317,10 @@
   private void HandleEditRace((int EventId, int RaceId) data)
   {
     var ev = events.FirstOrDefault(e => e.EventId == data.EventId);
-    var race = ev?.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
+    var race = ev!.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
 
     if (race != null)
-      editRaceModal?.Show(race);
+      editRaceModal?.Show(race.RaceId);
   }
 
   private async Task HandleSaveEditRace(Race updatedRace)
@@ -293,5 +362,87 @@
     totalCountParticipants = events.Sum(e => e.TotalParticipantsRegistration);
 
     StateHasChanged();
+  }
+
+  private void ApplyFilters()
+  {
+    var filtered = eventsOriginal;
+
+    if (!string.IsNullOrWhiteSpace(searchText))
+    {
+      var text = searchText.Trim().ToLower();
+
+      text = RemoveDiacritics(text);
+
+      filtered = filtered.Where(e =>
+      (!string.IsNullOrEmpty(e.Name) && RemoveDiacritics(e.Name.ToLower()).Contains(text)) ||
+      (!string.IsNullOrEmpty(e.Location) && RemoveDiacritics(e.Location.ToLower()).Contains(text))
+      ).ToList();
+    }
+
+    if (selectedStatus != "Todos los estados")
+    {
+      var normalizedStatus = RemoveDiacritics(selectedStatus.ToLower());
+      filtered = filtered.Where(e => RemoveDiacritics(e.StatusLabel.ToLower()) == normalizedStatus).ToList();
+    }
+
+    if (selectedCategory != "Todas las categorías")
+    {
+      var normalizedCategory = RemoveDiacritics(selectedCategory.ToLower());
+      filtered = filtered.Where(e => e.Races.Any(r =>
+      r.RaceCategories!.Any(rc => RemoveDiacritics(rc.Category!.ExternalName!.ToLower()) == normalizedCategory)
+      )).ToList();
+    }
+
+    events = filtered;
+    StateHasChanged();
+  }
+
+  private void ResetFilters()
+  {
+    searchText = string.Empty;
+    selectedStatus = "Todos los estados";
+    selectedCategory = "Todas las categorías";
+    events = new List<EventDTO>(eventsOriginal);
+  }
+
+  private void OnSearchTextChanged(ChangeEventArgs e)
+  {
+    searchText = e.Value?.ToString() ?? string.Empty;
+
+    searchTimer?.Stop();
+    searchTimer?.Dispose();
+
+    searchTimer = new Timer(1000);
+    searchTimer.Elapsed += async (s, _) =>
+    {
+      searchTimer?.Stop();
+      searchTimer?.Dispose();
+
+      await InvokeAsync(() => ApplyFilters());
+    };
+    searchTimer.AutoReset = false;
+    searchTimer.Start();
+  }
+
+  private void OnFilterChanged(ChangeEventArgs e)
+  {
+    ApplyFilters();
+  }
+
+  public static string RemoveDiacritics(string text)
+  {
+    var normalizedString = text.Normalize(NormalizationForm.FormD);
+    var stringBuilder = new System.Text.StringBuilder();
+
+    foreach (var character in normalizedString)
+    {
+      if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+      {
+        stringBuilder.Append(character);
+      }
+    }
+
+    return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
   }
 }

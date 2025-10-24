@@ -13,11 +13,15 @@ namespace SportEventManager.Models
         public int CategoryId { get; set; }
         [Required]
         [MaxLength(100)]
-        public string? Name { get; set; }
+        public string? InternalName { get; set; }
+        [MaxLength(100)]
+        public string? ExternalName { get; set; }
         [MaxLength(10)]
         public string? Gender { get; set; }
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
+        [NotMapped]
+        public bool? IsSelected { get; set; }
 
         // Relationships
         public ICollection<RaceCategory>? RaceCategories { get; set; }
@@ -27,10 +31,11 @@ namespace SportEventManager.Models
         {
         }
 
-        public Category(int categoryId, int raceId, string? name, string? gender, int minAge, int maxAge)
+        public Category(int categoryId, string? internalName, string? externalName, string? gender, int minAge, int maxAge)
         {
             CategoryId = categoryId;
-            Name = name;
+            InternalName = internalName;
+            ExternalName = externalName;
             Gender = gender;
             MinAge = minAge;
             MaxAge = maxAge;

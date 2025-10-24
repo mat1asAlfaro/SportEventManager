@@ -33,9 +33,10 @@ body {
 .card {
   background-color: var(--color-card-background);
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px;
   color: var(--color-primary-text);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 button.primary {
@@ -112,5 +113,5 @@ textarea {
 
 .border {
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
 }

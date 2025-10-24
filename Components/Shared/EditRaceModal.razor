@@ -1,6 +1,11 @@
+@using SportEventManager.Core
 @using SportEventManager.DTOs
+@using SportEventManager.Data
 @using SportEventManager.Models
 @inherits LayoutComponentBase
+
+@inject IRaceRepository RaceRepository
+@inject ICategoryRepository CategoryRepository
 
 <div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
   <div class="modal-dialog modal-dialog-centered">
@@ -10,62 +15,128 @@
         <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
       </div>
 
-      <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Nombre</label>
-          <input class="form-control" @bind="EditableRace.Name" />
+      <EditForm Model="@EditableRace" OnValidSubmit="@Save" OnInvalidSubmit="@OnInvalidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nombre</label>
+            <input class="form-control" @bind="EditableRace!.Name" />
+            <ValidationMessage For="@(() => EditableRace.Name)" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Categorías</label>
+            <div class="form-control d-flex flex-wrap gap-2">
+              @foreach (var category in AvailableCategories)
+              {
+                var isSelected = SelectedCategoryIds.Contains(category.CategoryId);
+                <button type="button"
+                  class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") btn-sm text-secondary"
+                  @onclick="() => ToggleCategory(category.CategoryId)">
+                  @category.ExternalName
+                </button>
+              }
+            </div>
+            @if (!IsCategoryValid)
+            {
+              <div class="text-danger small mt-1">Debe seleccionar al menos una categoría.</div>
+            }
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Distancia (km)</label>
+            <input type="number" class="form-control" step="0.1" min="1" @bind="EditableRace.DistanceKm" />
+            <ValidationMessage For="@(() => EditableRace.DistanceKm)" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Máx. Participantes</label>
+            <input type="number" class="form-control" step="50" min="0" @bind="EditableRace.MaxParticipants" />
+            <ValidationMessage For="@(() => EditableRace.MaxParticipants)" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Hora de inicio</label>
+            <input type="datetime-local" class="form-control custom-datetime" @bind="EditableRace.StartTime" />
+            <ValidationMessage For="@(() => EditableRace.StartTime)" />
+          </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Distancia (km)</label>
-          <input type="number" class="form-control" step="0.1" min="1" @bind="EditableRace.DistanceKm" />
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Máx. Participantes</label>
-          <input type="number" class="form-control" step="50" min="0" @bind="EditableRace.MaxParticipants" />
-        </div>
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Hora de inicio</label>
-          <input type="datetime-local" class="form-control custom-datetime" @bind="EditableRace.StartTime" />
-        </div>
-      </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary fw-semibold" @onclick="Close">
-          <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
-        </button>
-        <button class="btn btn-primary fw-semibold" @onclick="Save">
-          <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar cambios
-        </button>
-      </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary fw-semibold" @onclick="Close">
+            <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary fw-semibold">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar cambios
+          </button>
+        </div>
+      </EditForm>
     </div>
   </div>
 </div>
 
 @code {
-  [Parameter] public Race EditableRace { get; set; } = new();
+  [Parameter] public int EventId { get; set; }
   [Parameter] public EventCallback<Race> OnSave { get; set; }
   [Parameter] public EventCallback OnCancel { get; set; }
 
   private bool IsVisible { get; set; }
+  private Race? EditableRace { get; set; } = new();
+  private List<Category> AvailableCategories { get; set; } = new();
+  private List<int> SelectedCategoryIds { get; set; } = new();
+  private bool IsCategoryValid => SelectedCategoryIds.Any();
+  private bool IsFormValid => ValidateForm();
 
-  public void Show(RaceDTO race)
+  public async Task Show(int raceId)
   {
-    EditableRace = new Race
-    {
-      RaceId = race.RaceId,
-      Name = race.Name,
-      DistanceKm = race.DistanceKm,
-      StartTime = race.StartTime,
-      MaxParticipants = race.MaxParticipants
-    };
+    EditableRace = await RaceRepository.GetRaceByIdAsync(raceId);
+
+    if (EditableRace == null) return;
+
+    AvailableCategories = (await CategoryRepository.GetAllCategoriesAsync()).ToList();
+
+    SelectedCategoryIds = EditableRace.RaceCategories!.Select(rc => rc.CategoryId).ToList() ?? new List<int>();
+
     IsVisible = true;
     StateHasChanged();
   }
 
+  private void ToggleCategory(int categoryId)
+  {
+    if (SelectedCategoryIds.Contains(categoryId))
+      SelectedCategoryIds.Remove(categoryId);
+    else
+      SelectedCategoryIds.Add(categoryId);
+  }
+
+  private bool ValidateForm()
+  {
+    return !string.IsNullOrWhiteSpace(EditableRace!.Name)
+    && IsCategoryValid
+    && EditableRace.DistanceKm > 0
+    && EditableRace.MaxParticipants >= 0
+    && EditableRace.StartTime > DateTime.MinValue;
+  }
+
   private async Task Save()
   {
+    if (!ValidateForm())
+      return;
+
+    EditableRace!.RaceCategories = SelectedCategoryIds
+    .Select(id => new RaceCategory
+    {
+      RaceId = EditableRace.RaceId,
+      CategoryId = id
+    })
+    .ToList();
+
+    await RaceRepository.UpdateRaceAsync(EditableRace);
+
     await OnSave.InvokeAsync(EditableRace);
     IsVisible = false;
+  }
+
+  private void OnInvalidSubmit()
+  {
+    StateHasChanged();
   }
 
   private async Task Close()
