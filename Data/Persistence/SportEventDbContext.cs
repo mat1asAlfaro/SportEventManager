@@ -28,6 +28,7 @@ namespace SportEventManager.Data.Persistence
         public DbSet<RegistrationChip> RegistrationChips { get; set; }
         public DbSet<Split> Splits { get; set; }
         public DbSet<TimeRecord> TimeRecords { get; set; }
+        public DbSet<UserAccount> UserAccounts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
