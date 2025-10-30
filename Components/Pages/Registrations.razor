@@ -1,10 +1,12 @@
 ﻿@page "/registrations"
 @rendermode InteractiveServer
+@using SportEventManager.DTOs
+@inject SportEventManager.Core.IEventRepository EventRepository
 @inject NavigationManager Navigation
-@* @implements IDisposable *@
 
 <PageTitle>Inscripciones</PageTitle>
 
+<!-- SECCIÓN - Título -->
 <div class="title-section position-relative py-5 text-center">
     <div class="container-lg px-4 px-sm-5 px-lg-4">
         <div class="event-icon-border d-inline-flex align-items-center justify-content-center bg-success rounded-4 mb-4">
@@ -15,6 +17,311 @@
     </div>
 </div>
 
-@code {
+<!-- SECCIÓN - Eventos próximos -->
+<section class="container-xxl px-4 mb-4">
+    <div class="upcoming-box p-3 p-md-4">
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-3">
+            <h5 class="fw-bold mb-0">Eventos del próximo mes</h5>
+            <div class="ms-sm-auto" style="min-width: 260px;">
+                <div class="position-relative">
+                    <span class="material-symbols-outlined text-secondary position-absolute top-50 translate-middle-y ms-2">search</span>
+                    <input type="text" class="form-control ps-5 placeholder-white" placeholder="Nombre o ubicación..." @oninput="OnSearchTextChanged" />
+                </div>
+            </div>
+        </div>
 
+        @if (UpcomingEvents.Any())
+        {
+            <div class="row g-3 @slideClass">
+                @foreach (var ev in GetCurrentPageItems())
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card registration-event-card h-100">
+                            <div class="card-body">
+                                <h6 class="fw-semibold mb-2">@ev.Name</h6>
+                                <div class="text-secondary small d-flex align-items-center gap-2 mb-1">
+                                    <span class="material-symbols-outlined fs-6">calendar_today</span>
+                                    <span>@ev.StartDate.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</span>
+                                </div>
+                                <div class="text-secondary small d-flex align-items-center gap-2 mb-2">
+                                    <span class="material-symbols-outlined fs-6">location_on</span>
+                                    <span>@ev.Location</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge @GetStatusBadgeClass(ev.StatusLabel)">@ev.StatusLabel</span>
+                                    <span class="badge badge-secondary-theme">@ev.Races.Count() @(ev.Races.Count() == 1 ? "carrera" : "carreras")</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pt-0">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-sm btn-success d-flex align-items-center justify-content-center gap-2"
+                                            @onclick="() => SelectEvent(ev.EventId)">
+                                        <span class="material-symbols-outlined">how_to_reg</span>
+                                        Inscribirme
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Controles de paginación abajo del contenedor -->
+            <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="PrevPage" disabled="@(!CanPrev)">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="NextPage" disabled="@(!CanNext)">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="text-secondary">No hay eventos en los próximos 30 días.</div>
+        }
+    </div>
+</section>
+
+<!-- SECCIÓN - Formulario de selección -->
+<div id="registration-form" class="container-lg px-4 px-sm-5 px-lg-4 mb-5">
+    <div class="register-container p-4">
+        <h5 class="fw-bold mb-2">Selecciona tu carrera</h5>
+        <p class="text-secondary mb-4">Elige el evento y la carrera para continuar con la inscripción</p>
+
+        <!-- Evento -->
+        <div class="mb-3">
+            <label class="form-label">Evento</label>
+            <div class="select-wrapper">
+                <select class="form-select" @bind=SelectedEventId>
+                    <option value="0">Selecciona un evento</option>
+                    @foreach (var ev in Events.Where(e => e.Races != null && e.Races.Any()))
+                    {
+                        <option value="@ev.EventId">@ev.Name (@ev.StartDate.ToString("dd/MM/yyyy"))</option>
+                    }
+                </select>
+                <span class="material-symbols-outlined select-icon">expand_more</span>
+            </div>
+        </div>
+
+        <!-- Carrera -->
+        <div class="mb-3">
+            <label class="form-label">Carrera</label>
+            <div class="select-wrapper">
+                <select class="form-select" @bind=SelectedRaceId disabled="@(SelectedEventId == 0)">
+                    <option value="0">Selecciona una carrera</option>
+                    @if (SelectedEvent is not null)
+                    {
+                        foreach (var race in SelectedEvent.Races)
+                        {
+                            <option value="@race.RaceId">@race.Name (@race.DistanceKm km)</option>
+                        }
+                    }
+                </select>
+                <span class="material-symbols-outlined select-icon">expand_more</span>
+            </div>
+        </div>
+
+        <!-- Continuar -->
+        <button class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+                disabled="@(!CanContinue)"
+                @onclick="ContinueRegistration">
+            <span class="material-symbols-outlined">arrow_forward</span>
+            <span class="fw-semibold">Continuar con la inscripción</span>
+        </button>
+
+        @if (!string.IsNullOrWhiteSpace(Feedback))
+        {
+            <div class="alert alert-info mt-3" role="alert">
+                @Feedback
+            </div>
+        }
+    </div>
+
+    <RegisterParticipantModal @ref="registerModal" OnRegistered="HandleRegistered" />
+</div>
+
+@code {
+    private List<EventDTO> Events = new();
+    private RegisterParticipantModal? registerModal;
+
+    // Paginación de eventos (1 fila x 3 columnas = 3 items por página)
+    private const int CardsPerRow = 3;
+    private const int RowsPerPage = 1;
+    private int PageSize => CardsPerRow * RowsPerPage; // = 3
+    private int currentPage = 0;
+    private string searchText = string.Empty;
+
+    // Animación
+    private string? slideClass;
+    private int slideToken;
+    private const int SlideDurationMs = 250;
+
+    private IEnumerable<EventDTO> UpcomingEvents
+        => Events
+            .Where(e => e.Races != null && e.Races.Any())
+            .Where(e => e.StatusLabel == "Próximo")
+            .Where(e => e.StartDate >= DateTime.Now && e.StartDate <= DateTime.Now.AddMonths(1))
+            .Where(e => string.IsNullOrWhiteSpace(searchText) ||
+                        MatchesSearch(e, searchText))
+            .OrderBy(e => e.StartDate)
+            .ToList();
+
+    private bool CanPrev => currentPage > 0;
+    private bool CanNext => (currentPage + 1) * PageSize < UpcomingEvents.Count();
+
+    private IReadOnlyList<EventDTO> GetCurrentPageItems()
+    {
+        var list = UpcomingEvents.ToList();
+        var skip = currentPage * PageSize;
+        return list.Skip(skip).Take(PageSize).ToList();
+    }
+
+    private async Task TriggerSlideAsync(string direction)
+    {
+        var token = ++slideToken;
+        slideClass = direction == "left" ? "slide-in-left" : "slide-in-right";
+        StateHasChanged();
+        await Task.Delay(SlideDurationMs);
+        if (token == slideToken)
+        {
+            slideClass = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (CanNext)
+        {
+            currentPage++;
+            await TriggerSlideAsync("left");
+        }
+    }
+
+    private async Task PrevPage()
+    {
+        if (CanPrev)
+        {
+            currentPage--;
+            await TriggerSlideAsync("right");
+        }
+    }
+
+    private void OnSearchTextChanged(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? string.Empty;
+        currentPage = 0; // volver al inicio al filtrar
+    }
+
+    private static bool MatchesSearch(EventDTO e, string text)
+    {
+        var normalized = RemoveDiacritics(text.Trim().ToLower());
+        var name = RemoveDiacritics(e.Name?.ToLower() ?? string.Empty);
+        var loc = RemoveDiacritics(e.Location?.ToLower() ?? string.Empty);
+        return name.Contains(normalized) || loc.Contains(normalized);
+    }
+
+    private static string RemoveDiacritics(string input)
+    {
+        var normalizedString = input.Normalize(System.Text.NormalizationForm.FormD);
+        var stringBuilder = new System.Text.StringBuilder();
+        foreach (var c in normalizedString)
+        {
+            var uc = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (uc != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+        return stringBuilder.ToString().Normalize(System.Text.NormalizationForm.FormC);
+    }
+
+    private EventDTO? SelectedEvent => Events.FirstOrDefault(e => e.EventId == SelectedEventId);
+    private RaceDTO? SelectedRace => SelectedEvent?.Races.FirstOrDefault(r => r.RaceId == SelectedRaceId);
+
+    private int selectedEventId;
+    private int SelectedEventId
+    {
+        get => selectedEventId;
+        set
+        {
+            if (selectedEventId == value) return;
+            selectedEventId = value;
+            SelectedRaceId = 0; // reset al cambiar evento
+            Feedback = null;
+        }
+    }
+
+    private int selectedRaceId;
+    private int SelectedRaceId
+    {
+        get => selectedRaceId;
+        set
+        {
+            if (selectedRaceId == value) return;
+            selectedRaceId = value;
+            Feedback = null;
+        }
+    }
+
+    private string? Feedback { get; set; }
+
+    private bool CanContinue => SelectedEventId != 0 && SelectedRaceId != 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Events = await EventRepository.GetAllEventsWithRacesAndSplitsAsync();
+        currentPage = 0;
+    }
+
+    private void SelectEvent(int eventId)
+    {
+        SelectedEventId = eventId;
+        var ev = SelectedEvent;
+        if (ev is not null && ev.Races.Any())
+        {
+            SelectedRaceId = ev.Races.First().RaceId;
+        }
+        Navigation.NavigateTo($"/registrations#registration-form", forceLoad: false);
+    }
+
+    private void StartRegistration(int eventId)
+    {
+        SelectedEventId = eventId;
+        var ev = SelectedEvent;
+        if (ev is not null && ev.Races.Any())
+        {
+            var race = ev.Races.First();
+            SelectedRaceId = race.RaceId;
+            registerModal?.Show(ev, race);
+        }
+    }
+
+    private async Task HandleRegistered(SportEventManager.Models.Registration registration)
+    {
+        Feedback = $"Inscripción creada (# {registration.RegistrationId}).";
+        await Task.Yield();
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Finalizado" => "status-badge-finalized",
+            "Próximo" => "status-badge-upcoming",
+            "Confirmado" => "status-badge-confirmed",
+            _ => "badge bg-secondary"
+        };
+    }
+
+    private void ContinueRegistration()
+    {
+        var ev = SelectedEvent;
+        var race = SelectedRace;
+        if (ev != null && race != null)
+        {
+            registerModal?.Show(ev, race);
+        }
+    }
 }

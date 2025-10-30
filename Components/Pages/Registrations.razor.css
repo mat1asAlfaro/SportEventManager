@@ -6,3 +6,50 @@
     width: 4rem;
     height: 4rem;
 }
+
+.register-container {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.registration-event-card {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+}
+
+/* Badge secundaria basada en theme.css */
+.badge-secondary-theme {
+  background-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);
+  color: var(--color-primary-text);
+  border: 1px solid var(--color-secondary);
+}
+
+/* Animaciones de deslizamiento para el grid */
+.slide-in-left {
+  animation: slideInLeft 250ms ease-in-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 250ms ease-in-out;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(16px); opacity: 0.6; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(-16px); opacity: 0.6; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Recuadro opaco para la sección de próximos eventos */
+.upcoming-box {
+  background-color: color-mix(in srgb, var(--color-card-background) 85%, black 15%);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+}

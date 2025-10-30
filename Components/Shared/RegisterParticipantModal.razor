@@ -1,0 +1,205 @@
+@using SportEventManager.Models
+@using SportEventManager.DTOs
+@using SportEventManager.Core
+@inherits LayoutComponentBase
+
+@inject IParticipantRepository ParticipantRepository
+@inject IRegistrationRepository RegistrationRepository
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Completar datos del participante</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <EditForm Model="@EditableParticipant" OnValidSubmit="@Save" OnInvalidSubmit="@OnInvalidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="modal-body">
+          <div class="mb-2 text-secondary small">Evento: <span class="text-primary">@EventName</span></div>
+          <div class="mb-3 text-secondary small">Carrera: <span class="text-primary">@RaceName</span></div>
+
+          @if (!string.IsNullOrEmpty(ErrorMessage))
+          {
+            <div class="alert alert-error mb-3">@ErrorMessage</div>
+          }
+          @if (!string.IsNullOrEmpty(InfoMessage))
+          {
+            <div class="alert @(IsExistingParticipant ? "alert-success" : "alert-warning") mb-3">@InfoMessage</div>
+          }
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Documento</label>
+            <input class="form-control" maxlength="8" @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required />
+            <div class="form-text text-secondary">Ingresa el documento para buscar un participante existente.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nombre</label>
+            <input class="form-control" @bind="EditableParticipant.FirstName" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Apellido</label>
+            <input class="form-control" @bind="EditableParticipant.LastName" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email</label>
+            <input type="email" class="form-control" @bind="EditableParticipant.Email" required />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary fw-semibold" @onclick="Close">
+            <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary fw-semibold" disabled="@IsSaving">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : "Confirmar inscripción")
+          </button>
+        </div>
+      </EditForm>
+    </div>
+  </div>
+</div>
+
+@code {
+  [Parameter] public EventCallback<Registration> OnRegistered { get; set; }
+  [Parameter] public EventCallback OnCancel { get; set; }
+
+  private bool IsVisible { get; set; }
+  private bool IsSaving { get; set; }
+  private string? ErrorMessage { get; set; }
+  private string? InfoMessage { get; set; }
+  private bool IsExistingParticipant { get; set; }
+
+  private int RaceId { get; set; }
+  private string RaceName { get; set; } = string.Empty;
+  private string EventName { get; set; } = string.Empty;
+  private List<RaceCategoryDTO> RaceCategories { get; set; } = new();
+
+  private Participant EditableParticipant { get; set; } = new();
+
+  public void Show(EventDTO ev, RaceDTO race)
+  {
+    EventName = ev.Name ?? string.Empty;
+    RaceName = race.Name ?? string.Empty;
+    RaceId = race.RaceId;
+    RaceCategories = race.RaceCategories?.ToList() ?? new List<RaceCategoryDTO>();
+
+    ErrorMessage = null;
+    InfoMessage = null;
+    IsExistingParticipant = false;
+    IsSaving = false;
+    EditableParticipant = new Participant();
+
+    if (!RaceCategories.Any())
+    {
+      ErrorMessage = "La carrera no tiene categorías configuradas. No es posible completar la inscripción.";
+    }
+
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task OnDocumentChanged()
+  {
+    ErrorMessage = null;
+    InfoMessage = null;
+
+    var doc = EditableParticipant.DocumentNumber?.Trim();
+    if (string.IsNullOrWhiteSpace(doc))
+    {
+      IsExistingParticipant = false;
+      return;
+    }
+
+    var existing = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+    if (existing != null)
+    {
+      EditableParticipant = existing;
+      IsExistingParticipant = true;
+      InfoMessage = "Participante encontrado. Verifica los datos antes de confirmar.";
+    }
+    else
+    {
+      // Mantener el documento y crear un nuevo participante
+      EditableParticipant = new Participant
+      {
+        DocumentNumber = doc
+      };
+      IsExistingParticipant = false;
+      InfoMessage = "Nuevo participante. Completa los datos para continuar.";
+    }
+  }
+
+  private async Task Save()
+  {
+    if (!RaceCategories.Any())
+    {
+      ErrorMessage = "La carrera no tiene categorías configuradas.";
+      return;
+    }
+
+    if (string.IsNullOrWhiteSpace(EditableParticipant.DocumentNumber))
+    {
+      ErrorMessage = "Debes ingresar el documento.";
+      return;
+    }
+
+    try
+    {
+      IsSaving = true;
+      ErrorMessage = null;
+
+      if (EditableParticipant.ParticipantId == 0)
+      {
+        await ParticipantRepository.AddParticipantAsync(EditableParticipant);
+      }
+      else
+      {
+        await ParticipantRepository.UpdateParticipantAsync(EditableParticipant);
+      }
+
+      var participantId = EditableParticipant.ParticipantId;
+
+      // Asignación temporal de categoría: 1ra categoría disponible
+      var categoryId = RaceCategories.First().CategoryId;
+
+      var registration = new Registration
+      {
+        ParticipantId = participantId,
+        RaceId = RaceId,
+        CategoryId = categoryId,
+        Status = "Pending"
+      };
+
+      await RegistrationRepository.AddRegistrationAsync(registration);
+
+      IsVisible = false;
+      IsSaving = false;
+
+      if (OnRegistered.HasDelegate)
+      {
+        await OnRegistered.InvokeAsync(registration);
+      }
+    }
+    catch (Exception ex)
+    {
+      IsSaving = false;
+      ErrorMessage = ex.Message;
+    }
+  }
+
+  private async Task Close()
+  {
+    IsVisible = false;
+    await OnCancel.InvokeAsync();
+  }
+
+  private void OnInvalidSubmit()
+  {
+    // solo refrescar para mostrar validaciones
+    StateHasChanged();
+  }
+}
