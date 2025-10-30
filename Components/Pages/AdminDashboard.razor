@@ -1,0 +1,14 @@
+@page "/admin/dashboard"
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject NavigationManager NavigationManager
+
+<h2>Admin Dashboard</h2>
+
+<p>Welcome to the admin dashboard! Here you can manage users, events, and settings.</p>
+
+<a class="btn btn-primary" href="/admin/events">Gestionar Eventos</a>
+
+<a class ="btn btn-secondary" href="/logout"> Cerrar sesión</a>
+
