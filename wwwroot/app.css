@@ -2,7 +2,8 @@
 
 html,
 body {
-  font-family: "Consolas", "Courier New", monospace;
+    font-family: "Consolas", "Courier New", monospace;
+    overflow-x: hidden;
 }
 
 a,

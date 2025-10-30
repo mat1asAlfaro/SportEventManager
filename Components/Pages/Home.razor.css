@@ -1,14 +1,28 @@
 /* Banner */
 .full-width-section {
-  width: 99.19vw;
   position: relative;
+  width: 100svw;
   left: 50%;
-  margin-left: -50vw;
+  right: 50%;
+  margin-left: -50svw;
+  margin-right: -50svw;
+  box-sizing: border-box;
+}
+
+@supports not (width: 100svw) {
+  .full-width-section {
+    width: 100vw;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
 }
 
 .banner-section {
   min-height: 40rem;
-  background: url("assets/images/home-background.jpg") center no-repeat;
+  background: url("assets/images/home-background.jpg");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   margin-top: -1.1rem;
 }
 
