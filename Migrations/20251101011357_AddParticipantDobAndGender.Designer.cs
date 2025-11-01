@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101011357_AddParticipantDobAndGender")]
+    partial class AddParticipantDobAndGender
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -566,11 +569,6 @@ namespace SportEventManager.Migrations
                         },
                         new
                         {
-                            RaceId = 1,
-                            CategoryId = 4
-                        },
-                        new
-                        {
                             RaceId = 2,
                             CategoryId = 3
                         },
@@ -578,71 +576,6 @@ namespace SportEventManager.Migrations
                         {
                             RaceId = 2,
                             CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 3,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 3,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 4,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 4,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 5,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 5,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 6,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 6,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 7,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 7,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 8,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 8,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 9,
-                            CategoryId = 5
                         });
                 });
 

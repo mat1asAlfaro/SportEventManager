@@ -12,5 +12,6 @@ namespace SportEventManager.Core
         Task AddParticipantAsync(Participant participant);
         Task UpdateParticipantAsync(Participant participant);
         Task DeleteParticipantAsync(int participantId);
+        Task<int?> GetParticipantAgeAsync(int participantId);
     }
 }

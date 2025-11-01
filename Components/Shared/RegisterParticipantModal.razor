@@ -6,7 +6,7 @@
 @inject IParticipantRepository ParticipantRepository
 @inject IRegistrationRepository RegistrationRepository
 
-<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -27,26 +27,47 @@
           }
           @if (!string.IsNullOrEmpty(InfoMessage))
           {
-            <div class="alert @(IsExistingParticipant ? "alert-success" : "alert-warning") mb-3">@InfoMessage</div>
+            <div class="@GetInfoAlertClass() mb-3">@InfoMessage</div>
           }
 
           <div class="mb-3">
             <label class="form-label small fw-semibold">Documento</label>
-            <input class="form-control" maxlength="8" @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required />
-            <div class="form-text text-secondary">Ingresa el documento para buscar un participante existente.</div>
+            <input class="form-control" maxlength="8" placeholder="12345678" inputmode="numeric" @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required disabled="@(IsExistingParticipant || IsFormLocked)" />
+            <div class="form-text text-secondary">Ingresa tu número de documento y verificaremos si tus datos ya fueron cargados.</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Nombre</label>
+              <input class="form-control" placeholder="Ej: Juan" @bind="EditableParticipant.FirstName" required disabled="@IsFormLocked" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Apellido</label>
+              <input class="form-control" placeholder="Ej: Pérez" @bind="EditableParticipant.LastName" required disabled="@IsFormLocked" />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Email</label>
+              <input type="email" class="form-control" placeholder="nombre@correo.com" @bind="EditableParticipant.Email" required disabled="@IsFormLocked" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Fecha de nacimiento</label>
+              <input type="date" class="form-control" placeholder="dd/mm/aaaa" min="@MinBirthDate" max="@MaxBirthDate" @bind="EditableParticipant.DateOfBirth" required disabled="@IsFormLocked" />
+            </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Nombre</label>
-            <input class="form-control" @bind="EditableParticipant.FirstName" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Apellido</label>
-            <input class="form-control" @bind="EditableParticipant.LastName" required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Email</label>
-            <input type="email" class="form-control" @bind="EditableParticipant.Email" required />
+            <label class="form-label small fw-semibold">Género</label>
+            <div class="select-wrapper">
+              <select class="form-select" @bind="EditableParticipant.Gender" required disabled="@IsFormLocked">
+                <option value="">Selecciona</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+              </select>
+              <span class="material-symbols-outlined select-icon">expand_more</span>
+            </div>
           </div>
         </div>
 
@@ -54,8 +75,8 @@
           <button type="button" class="btn btn-secondary fw-semibold" @onclick="Close">
             <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
           </button>
-          <button type="submit" class="btn btn-primary fw-semibold" disabled="@IsSaving">
-            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : "Confirmar inscripción")
+          <button type="submit" class="btn btn-primary fw-semibold" disabled="@(IsSaving || IsSearching || IsFormLocked)">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ? "Buscando..." : "Confirmar inscripción"))
           </button>
         </div>
       </EditForm>
@@ -69,6 +90,8 @@
 
   private bool IsVisible { get; set; }
   private bool IsSaving { get; set; }
+  private bool IsSearching { get; set; }
+  private bool IsFormLocked { get; set; }
   private string? ErrorMessage { get; set; }
   private string? InfoMessage { get; set; }
   private bool IsExistingParticipant { get; set; }
@@ -76,14 +99,23 @@
   private int RaceId { get; set; }
   private string RaceName { get; set; } = string.Empty;
   private string EventName { get; set; } = string.Empty;
+  private int EventId { get; set; }
   private List<RaceCategoryDTO> RaceCategories { get; set; } = new();
 
   private Participant EditableParticipant { get; set; } = new();
+
+  // Serializador de acceso al repositorio para evitar operaciones concurrentes en el mismo DbContext
+  private readonly System.Threading.SemaphoreSlim _repoLock = new(1, 1);
+
+  // Límites de fecha de nacimiento: mínimo = hoy - 95 años, máximo = hoy
+  private string MinBirthDate => DateTime.Today.AddYears(-95).ToString("yyyy-MM-dd");
+  private string MaxBirthDate => DateTime.Today.ToString("yyyy-MM-dd");
 
   public void Show(EventDTO ev, RaceDTO race)
   {
     EventName = ev.Name ?? string.Empty;
     RaceName = race.Name ?? string.Empty;
+    EventId = ev.EventId;
     RaceId = race.RaceId;
     RaceCategories = race.RaceCategories?.ToList() ?? new List<RaceCategoryDTO>();
 
@@ -91,11 +123,17 @@
     InfoMessage = null;
     IsExistingParticipant = false;
     IsSaving = false;
+    IsSearching = false;
+    IsFormLocked = false;
     EditableParticipant = new Participant();
+
+    // Fecha por defecto: mínimo permitido (hoy - 95 años)
+    EditableParticipant.DateOfBirth = DateTime.Today.AddYears(-95);
 
     if (!RaceCategories.Any())
     {
       ErrorMessage = "La carrera no tiene categorías configuradas. No es posible completar la inscripción.";
+      IsFormLocked = true;
     }
 
     IsVisible = true;
@@ -104,6 +142,9 @@
 
   private async Task OnDocumentChanged()
   {
+    if (IsFormLocked)
+      return;
+
     ErrorMessage = null;
     InfoMessage = null;
 
@@ -114,30 +155,46 @@
       return;
     }
 
-    var existing = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
-    if (existing != null)
+    await _repoLock.WaitAsync();
+    IsSearching = true;
+    try
     {
-      EditableParticipant = existing;
-      IsExistingParticipant = true;
-      InfoMessage = "Participante encontrado. Verifica los datos antes de confirmar.";
-    }
-    else
-    {
-      // Mantener el documento y crear un nuevo participante
-      EditableParticipant = new Participant
+      var existing = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+      if (existing != null)
       {
-        DocumentNumber = doc
-      };
-      IsExistingParticipant = false;
-      InfoMessage = "Nuevo participante. Completa los datos para continuar.";
+        EditableParticipant = existing;
+        IsExistingParticipant = true;
+        InfoMessage = "Participante encontrado. Verifica los datos antes de confirmar.";
+      }
+      else
+      {
+        // Mantener el documento y crear un nuevo participante
+        EditableParticipant = new Participant
+        {
+          DocumentNumber = doc,
+          DateOfBirth = DateTime.Today.AddYears(-95) // default dentro de rango
+        };
+        IsExistingParticipant = false;
+        InfoMessage = "Nuevo participante. Completa los datos para continuar.";
+      }
+    }
+    finally
+    {
+      IsSearching = false;
+      _repoLock.Release();
+      StateHasChanged();
     }
   }
 
   private async Task Save()
   {
+    if (IsFormLocked)
+      return;
+
     if (!RaceCategories.Any())
     {
       ErrorMessage = "La carrera no tiene categorías configuradas.";
+      IsFormLocked = true;
       return;
     }
 
@@ -147,41 +204,97 @@
       return;
     }
 
+    if (string.IsNullOrWhiteSpace(EditableParticipant.Gender) || (EditableParticipant.Gender != "Masculino" && EditableParticipant.Gender != "Femenino"))
+    {
+      ErrorMessage = "Selecciona un género válido.";
+      return;
+    }
+
     try
     {
       IsSaving = true;
       ErrorMessage = null;
+      InfoMessage = null;
 
-      if (EditableParticipant.ParticipantId == 0)
+      await _repoLock.WaitAsync();
+      try
       {
-        await ParticipantRepository.AddParticipantAsync(EditableParticipant);
+        // Revalidar documento justo antes de guardar para evitar condiciones de carrera
+        var doc = EditableParticipant.DocumentNumber!.Trim();
+        var byDoc = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+
+        // Validaciones de existencia/duplicados (sin persistir todavía)
+        if (byDoc != null)
+        {
+          // 1) Ya inscripto en la misma carrera
+          if (await RegistrationRepository.ExistsByParticipantAndRaceAsync(byDoc.ParticipantId, RaceId))
+          {
+            ErrorMessage = "El participante ya está inscripto en esta carrera.";
+            IsSaving = false;
+            return; // bloquear alta
+          }
+
+          // 2) Ya inscripto en otra carrera del mismo evento
+          var existingInEvent = await RegistrationRepository.GetParticipantRegistrationInEventAsync(byDoc.ParticipantId, EventId);
+          if (existingInEvent != null)
+          {
+            InfoMessage = $"Este participante ya está inscripto en la carrera '{existingInEvent.Race?.Name}' de este evento.";
+            ErrorMessage = "No es posible inscribirse a dos carreras del mismo evento.";
+            IsSaving = false;
+            return; // bloquear alta
+          }
+        }
+
+        // Determinar categoría válida por edad y género (con datos del formulario)
+        var age = CalculateAge(EditableParticipant.DateOfBirth);
+        var categoryId = SelectEligibleCategoryId(age, EditableParticipant.Gender!);
+        if (categoryId is null)
+        {
+          ErrorMessage = "No es posible inscribirte a esta carrera porque no es de tu categoría.";
+          IsSaving = false;
+          return;
+        }
+
+        // Persistir participante (update o insert) sólo si pasó la validación de categoría
+        if (byDoc != null)
+        {
+          byDoc.FirstName = EditableParticipant.FirstName;
+          byDoc.LastName = EditableParticipant.LastName;
+          byDoc.Email = EditableParticipant.Email;
+          byDoc.DocumentNumber = doc;
+          byDoc.DateOfBirth = EditableParticipant.DateOfBirth;
+          byDoc.Gender = EditableParticipant.Gender;
+
+          await ParticipantRepository.UpdateParticipantAsync(byDoc);
+          EditableParticipant = byDoc;
+        }
+        else
+        {
+          await ParticipantRepository.AddParticipantAsync(EditableParticipant);
+        }
+
+        // Crear inscripción
+        var registration = new Registration
+        {
+          ParticipantId = EditableParticipant.ParticipantId,
+          RaceId = RaceId,
+          CategoryId = categoryId.Value,
+          Status = "Pending"
+        };
+
+        await RegistrationRepository.AddRegistrationAsync(registration);
+
+        IsVisible = false;
+        IsSaving = false;
+
+        if (OnRegistered.HasDelegate)
+        {
+          await OnRegistered.InvokeAsync(registration);
+        }
       }
-      else
+      finally
       {
-        await ParticipantRepository.UpdateParticipantAsync(EditableParticipant);
-      }
-
-      var participantId = EditableParticipant.ParticipantId;
-
-      // Asignación temporal de categoría: 1ra categoría disponible
-      var categoryId = RaceCategories.First().CategoryId;
-
-      var registration = new Registration
-      {
-        ParticipantId = participantId,
-        RaceId = RaceId,
-        CategoryId = categoryId,
-        Status = "Pending"
-      };
-
-      await RegistrationRepository.AddRegistrationAsync(registration);
-
-      IsVisible = false;
-      IsSaving = false;
-
-      if (OnRegistered.HasDelegate)
-      {
-        await OnRegistered.InvokeAsync(registration);
+        _repoLock.Release();
       }
     }
     catch (Exception ex)
@@ -189,6 +302,48 @@
       IsSaving = false;
       ErrorMessage = ex.Message;
     }
+  }
+
+  private static int CalculateAge(DateTime dob)
+  {
+    var today = DateTime.Today;
+    var age = today.Year - dob.Year;
+    if (dob.Date > today.AddYears(-age)) age--;
+    return age;
+  }
+
+  private int? SelectEligibleCategoryId(int age, string participantGender)
+  {
+    if (RaceCategories == null || RaceCategories.Count == 0)
+      return null;
+
+    // Mapear género del participante a símbolo de categoría
+    string genderSymbol = participantGender == "Masculino" ? "M" : participantGender == "Femenino" ? "F" : string.Empty;
+
+    var candidates = RaceCategories
+      .Where(rc => rc.Category != null)
+      .Where(rc =>
+        // Género compatible: mismo símbolo o categoría mixta "X"
+        (rc.Category!.Gender == genderSymbol || rc.Category!.Gender == "X")
+        && (!rc.Category!.MinAge.HasValue || age >= rc.Category!.MinAge.Value)
+        && (!rc.Category!.MaxAge.HasValue || age <= rc.Category!.MaxAge.Value)
+      )
+      .ToList();
+
+    if (!candidates.Any())
+      return null;
+
+    // Preferir categorías específicas de género (M/F) sobre mixtas (X)
+    var preferred = candidates.FirstOrDefault(c => c.Category!.Gender != "X") ?? candidates.First();
+    return preferred.CategoryId;
+  }
+
+  private string GetInfoAlertClass()
+  {
+    if (!string.IsNullOrWhiteSpace(InfoMessage) && InfoMessage.Contains("Participante encontrado", StringComparison.OrdinalIgnoreCase))
+      return "alert alert-success"; // verde
+
+    return "alert alert-warning"; // por defecto (naranja)
   }
 
   private async Task Close()

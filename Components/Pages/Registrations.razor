@@ -95,8 +95,7 @@
             <div class="select-wrapper">
                 <select class="form-select" @bind=SelectedEventId>
                     <option value="0">Selecciona un evento</option>
-                    @foreach (var ev in Events.Where(e => e.Races != null && e.Races.Any()))
-                    {
+                    @foreach (var ev in Events.Where(e => e.Races != null && e.Races.Any()).OrderBy(e => e.StartDate)) {
                         <option value="@ev.EventId">@ev.Name (@ev.StartDate.ToString("dd/MM/yyyy"))</option>
                     }
                 </select>
@@ -112,9 +111,9 @@
                     <option value="0">Selecciona una carrera</option>
                     @if (SelectedEvent is not null)
                     {
-                        foreach (var race in SelectedEvent.Races)
+                        foreach (var race in SelectedEvent.Races.OrderBy(r => r.StartTime))
                         {
-                            <option value="@race.RaceId">@race.Name (@race.DistanceKm km)</option>
+                            <option value="@race.RaceId">@race.Name (@race.DistanceKm km) - @race.StartTime.ToString("dd/MM/yyyy HH:mm")</option>
                         }
                     }
                 </select>

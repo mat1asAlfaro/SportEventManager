@@ -14,5 +14,8 @@ namespace SportEventManager.Core
         Task AddRegistrationAsync(Registration registration);
         Task UpdateRegistrationAsync(Registration registration);
         Task DeleteRegistrationAsync(int registrationId);
+        Task<bool> ExistsByParticipantAndEventAsync(int participantId, int eventId);
+        Task<bool> ExistsByParticipantAndRaceAsync(int participantId, int raceId);
+        Task<Registration?> GetParticipantRegistrationInEventAsync(int participantId, int eventId);
     }
 }
