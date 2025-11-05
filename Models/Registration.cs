@@ -19,6 +19,10 @@ namespace SportEventManager.Models
         [Required]
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
+        
+        [MaxLength(10)]
+        public string? BibNumber { get; set; }
+
         [MaxLength(20)]
         public string? Status { get; set; } = "Pending";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -32,12 +36,13 @@ namespace SportEventManager.Models
         {
         }
 
-        public Registration(int registrationId, int participantId, int raceId, int categoryId, string? status)
+        public Registration(int registrationId, int participantId, int raceId, int categoryId, string? bibNumber, string? status)
         {
             RegistrationId = registrationId;
             ParticipantId = participantId;
             RaceId = raceId;
             CategoryId = categoryId;
+            BibNumber = bibNumber;
             Status = status;
             CreatedAt = DateTime.UtcNow;
         }
