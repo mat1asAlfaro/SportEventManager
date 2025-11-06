@@ -20,11 +20,20 @@
             <label class="form-label small fw-semibold">Nombre del Punto</label>
             <input class="form-control placeholder-white" placeholder="ej. Salida, Control 5K, Meta"
               @bind="NewSplitName" />
+            @if (!string.IsNullOrWhiteSpace(NameError))
+            {
+              <div class="text-danger small mt-1">@NameError</div>
+            }
           </div>
+
           <div class="mb-3">
             <label class="form-label small fw-semibold">Distancia</label>
             <input type="number" class="form-control placeholder-white" step="0.5" max="@RaceDistanceKm" min="0"
               placeholder="ej. 0 km, 5 km, 10 km" @bind="NewKmMark" />
+            @if (!string.IsNullOrWhiteSpace(KmError))
+            {
+              <div class="text-danger small mt-1">@KmError</div>
+            }
           </div>
 
           <div class="d-flex justify-content-end">
@@ -34,7 +43,7 @@
           </div>
         </div>
 
-        @* Splits *@
+        @* Lista de splits *@
         @if (Splits.Any())
         {
           <div>
@@ -92,11 +101,13 @@
   private List<SplitDTO> Splits { get; set; } = new();
   private string NewSplitName { get; set; } = string.Empty;
   private string NewKmMark { get; set; } = string.Empty;
+  private string NameError { get; set; } = string.Empty;
+  private string KmError { get; set; } = string.Empty;
 
   public void Show(RaceDTO race)
   {
     RaceId = race.RaceId;
-    RaceName = race.Name ?? string.Empty;
+    RaceName = race.RaceName ?? string.Empty;
     RaceDistanceKm = race.DistanceKm;
     Splits = race.Splits != null ? new List<SplitDTO>(race.Splits) : new List<SplitDTO>();
 
@@ -106,6 +117,38 @@
 
   private async Task Save()
   {
+    NameError = KmError = string.Empty;
+
+    if (string.IsNullOrWhiteSpace(NewSplitName))
+    {
+      NameError = "Debe ingresar un nombre para el punto de control.";
+      return;
+    }
+
+    if (!double.TryParse(NewKmMark, out var km))
+    {
+      KmError = "Debe ingresar un valor numérico válido.";
+      return;
+    }
+    if (km < 0)
+    {
+      KmError = "La distancia no puede ser negativa.";
+      return;
+    }
+    if (km > RaceDistanceKm)
+    {
+      KmError = $"La distancia no puede superar los {RaceDistanceKm} km.";
+      return;
+    }
+
+    // Use decimal arithmetic to match the KmMark type and avoid implicit conversion errors
+    var kmDecimal = (decimal)km;
+    if (Splits.Any(s => Math.Abs((decimal)s.KmMark! - kmDecimal) < 0.001M))
+    {
+      KmError = $"Ya existe un punto en el kilómetro {km}.";
+      return;
+    }
+
     var newSplit = new Split { RaceId = RaceId, SplitName = NewSplitName, KmMark = double.Parse(NewKmMark) }; await
     OnSave.InvokeAsync(newSplit);
 
