@@ -13,5 +13,7 @@ namespace SportEventManager.Core
         Task AddSplitAsync(Split split);
         Task UpdateSplitAsync(Split split);
         Task DeleteSplitAsync(int splitId);
+        Task<Split?> GetByIdAsync(int splitId); // Alias para compatibilidad
+        Task<IEnumerable<Split>> GetByRaceIdAsync(int raceId); // Obtener splits de una carrera
     }
 }

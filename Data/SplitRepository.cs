@@ -57,5 +57,19 @@ namespace SportEventManager.Data
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<Split?> GetByIdAsync(int splitId)
+        {
+            return await GetSplitByIdAsync(splitId);
+        }
+
+        /// Obtiene todos los splits de una carrera específica
+        public async Task<IEnumerable<Split>> GetByRaceIdAsync(int raceId)
+        {
+            return await _context.Splits
+                .Where(s => s.RaceId == raceId)
+                .OrderBy(s => s.KmMark)
+                .ToListAsync();
+        }
     }
 }
