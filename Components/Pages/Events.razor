@@ -1,4 +1,6 @@
-@page "/events"
+@page "/admin/events"
+
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore.Migrations.Operations
 @using Microsoft.IdentityModel.Protocols.OpenIdConnect
 @using SportEventManager.Core
@@ -18,6 +20,7 @@
 @inject ISplitRepository SplitRepository;
 @inject ICategoryRepository CategoryRepository;
 @inject IJSRuntime JS
+@attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Eventos</PageTitle>
 

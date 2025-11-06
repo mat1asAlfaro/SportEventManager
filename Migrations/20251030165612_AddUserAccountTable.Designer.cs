@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251030165612_AddUserAccountTable")]
+    partial class AddUserAccountTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -226,14 +229,10 @@ namespace SportEventManager.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ParticipantId"));
 
-                    b.Property<DateTime>("Birthdate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DocumentNumber")
-                        .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
@@ -246,9 +245,6 @@ namespace SportEventManager.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -268,111 +264,91 @@ namespace SportEventManager.Migrations
                         new
                         {
                             ParticipantId = 1,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "12345678",
                             Email = "matias@test.com",
                             FirstName = "Matias",
-                            Gender = 1,
                             LastName = "Alfaro"
                         },
                         new
                         {
                             ParticipantId = 2,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "87654321",
                             Email = "ana@test.com",
                             FirstName = "Ana",
-                            Gender = 2,
                             LastName = "Gomez"
                         },
                         new
                         {
                             ParticipantId = 3,
-                            Birthdate = new DateTime(2012, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "11223344",
                             Email = "lucas@test.com",
                             FirstName = "Lucas",
-                            Gender = 1,
                             LastName = "Perez"
                         },
                         new
                         {
                             ParticipantId = 4,
-                            Birthdate = new DateTime(2008, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "44332211",
                             Email = "sofia@test.com",
                             FirstName = "Sofia",
-                            Gender = 2,
                             LastName = "Martinez"
                         },
                         new
                         {
                             ParticipantId = 5,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "55667788",
                             Email = "juan@test.com",
                             FirstName = "Juan",
-                            Gender = 1,
                             LastName = "Diaz"
                         },
                         new
                         {
                             ParticipantId = 6,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "99887766",
                             Email = "lucia@test.com",
                             FirstName = "Lucia",
-                            Gender = 2,
                             LastName = "Fernandez"
                         },
                         new
                         {
                             ParticipantId = 7,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "66778899",
                             Email = "carlos@test.com",
                             FirstName = "Carlos",
-                            Gender = 1,
                             LastName = "Rojas"
                         },
                         new
                         {
                             ParticipantId = 8,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "77889900",
                             Email = "laura@test.com",
                             FirstName = "Laura",
-                            Gender = 2,
                             LastName = "Vazquez"
                         },
                         new
                         {
                             ParticipantId = 9,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "33445566",
                             Email = "pedro@test.com",
                             FirstName = "Pedro",
-                            Gender = 1,
                             LastName = "Torres"
                         },
                         new
                         {
                             ParticipantId = 10,
-                            Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "22334455",
                             Email = "mariana@test.com",
                             FirstName = "Mariana",
-                            Gender = 2,
                             LastName = "Suarez"
                         });
                 });
@@ -470,9 +446,6 @@ namespace SportEventManager.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RegistrationId"));
-
-                    b.Property<int?>("BibNumber")
-                        .HasColumnType("int");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
