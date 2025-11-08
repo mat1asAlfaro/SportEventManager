@@ -95,37 +95,49 @@ namespace SportEventManager.Data
 
         public async Task<bool> AssignBibNumberAsync(int registrationId)
         {
-            var registration = await _context.Registrations.FindAsync(registrationId);
-            if (registration == null)
-                throw new Exception("Registro no encontrado.");
+            using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
 
-            var race = await _context.Races.FindAsync(registration.RaceId);
-            if (race == null)
-                throw new Exception("Carrera no encontrada.");
+            try
+            {
+                var registration = await _context.Registrations.FindAsync(registrationId);
+                if (registration == null)
+                    throw new Exception("Registro no encontrado.");
 
-            var lastBib = await _context.Registrations
-                .Where(r => r.RaceId == registration.RaceId)
-                .OrderByDescending(r => r.BibNumber)
-                .Select(r => r.BibNumber)
-                .FirstOrDefaultAsync();
+                var race = await _context.Races.FindAsync(registration.RaceId);
+                if (race == null)
+                    throw new Exception("Carrera no encontrada.");
 
-            int nextBib = (lastBib ?? 0) + 1;
+                var lastBib = await _context.Registrations
+                    .Where(r => r.RaceId == registration.RaceId)
+                    .OrderByDescending(r => r.BibNumber)
+                    .Select(r => r.BibNumber)
+                    .FirstOrDefaultAsync();
 
-            if (nextBib > race.MaxParticipants)
-                throw new Exception("La carrera ya alcanzó el máximo de inscripciones.");
+                int nextBib = (lastBib ?? 0) + 1;
 
-            // Evitar dorsales duplicados dentro de la misma Carrera
-            bool exists = await _context.Registrations
-                .AnyAsync(r => r.RaceId == registration.RaceId && r.BibNumber == nextBib && r.RegistrationId != registrationId);
+                if (nextBib > race.MaxParticipants)
+                    throw new Exception("La carrera ya alcanzó el máximo de inscripciones.");
 
-            if (exists)
-                throw new Exception($"El dorsal {nextBib} ya está asignado en esta carrera.");
+                // Verificar duplicado justo antes de guardar
+                bool exists = await _context.Registrations
+                    .AnyAsync(r => r.RaceId == registration.RaceId && r.BibNumber == nextBib && r.RegistrationId != registrationId);
 
-            // Asignar dorsal
-            registration.BibNumber = nextBib;
-            await _context.SaveChangesAsync();
+                if (exists)
+                    throw new Exception($"El dorsal {nextBib} ya está asignado en esta carrera.");
 
-            return true;
+                registration.BibNumber = nextBib;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            throw new Exception("No se pudo asignar un dorsal único tras varios intentos.");
         }
 
         public async Task<bool> RemoveBibNumberAsync(int registrationId)
