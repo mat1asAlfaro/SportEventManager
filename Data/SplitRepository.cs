@@ -62,8 +62,6 @@ namespace SportEventManager.Data
         {
             return await GetSplitByIdAsync(splitId);
         }
-
-        /// Obtiene todos los splits de una carrera específica
         public async Task<IEnumerable<Split>> GetByRaceIdAsync(int raceId)
         {
             return await _context.Splits

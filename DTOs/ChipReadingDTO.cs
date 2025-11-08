@@ -6,6 +6,6 @@ namespace SportEventManager.DTOs
     {
         public int ChipId { get; set; }
         public int SplitId { get; set; }
-        public DateTime? Timestamp { get; set; } // Opcional, si no se envía se usa DateTime.UtcNow
+        public DateTime? Timestamp { get; set; } // Opcional, si no se usa DateTime.UtcNow
     }
 }

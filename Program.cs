@@ -144,4 +144,36 @@ app.MapGet("/api/timing/race/{raceId}/stats", async (
 .WithName("GetRaceStats")
 .WithOpenApi();
 
+// Consulta en vivo por número de dorsal
+app.MapGet("/api/timing/race/{raceId}/live/bib/{bibNumber}", async (
+    int raceId,
+    int bibNumber,
+    ITimingService timingService,
+    ILogger<Program> logger) =>
+{
+    try
+    {
+        var data = await timingService.GetLiveParticipantDataByBibAsync(raceId, bibNumber);
+        
+        if (data == null)
+        {
+            logger.LogWarning($"No data found for bib {bibNumber} in race {raceId}");
+            return Results.NotFound(new { error = $"No se encontró el dorsal {bibNumber} en esta carrera" });
+        }
+
+        return Results.Ok(data);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, $"Error getting live data for bib {bibNumber}");
+        return Results.Problem(
+            detail: ex.Message,
+            statusCode: 500,
+            title: "Error al obtener datos en vivo"
+        );
+    }
+})
+.WithName("GetLiveParticipantDataByBib")
+.WithOpenApi();
+
 app.Run();
