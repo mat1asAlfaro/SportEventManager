@@ -4,19 +4,26 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SportEventManager.Components;
 using SportEventManager.Core;
+using SportEventManager.Core.Services;
 using SportEventManager.Data;
 using SportEventManager.Data.Persistence;
 using SportEventManager.Models;
+using SportEventManager.Controllers;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddControllers();
+
+// Servicio singleton para notificaciones en tiempo real
+builder.Services.AddSingleton<RaceUpdateService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
-    {   
+    {
         options.Cookie.Name = "auth_token";
         options.LoginPath = "/admin";
         options.Cookie.MaxAge = TimeSpan.FromHours(1);
@@ -47,15 +54,16 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseRouting();
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-app.UseAntiforgery();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
-app.MapStaticAssets();
+app.MapControllers();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

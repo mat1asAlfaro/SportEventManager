@@ -1,0 +1,73 @@
+@page "/race-live/{RaceId:int}"
+@rendermode InteractiveServer
+@using SportEventManager.DTOs
+@using SportEventManager.Core.Services
+@inject RaceUpdateService RaceUpdateService
+@implements IDisposable
+
+<h2 class="text-xl font-bold mb-2">🏁 Seguimiento en vivo de la carrera #@RaceId</h2>
+
+<div class="mb-4 p-3 bg-blue-50 rounded">
+  <p class="text-sm text-blue-800">
+    📡 Conectado vía Blazor Server SignalR nativo
+  </p>
+  <p class="text-xs text-gray-600 mt-1">
+    Total de actualizaciones: @_updates.Count
+  </p>
+</div>
+
+@if (_updates.Count == 0)
+{
+  <p class="text-gray-500 italic">Esperando actualizaciones...</p>
+}
+else
+{
+  <div class="space-y-2">
+    @foreach (var update in _updates.OrderByDescending(u => u.Timestamp).Take(20))
+    {
+      <div class="p-3 bg-white border border-gray-200 rounded shadow-sm">
+        <div class="flex justify-between items-center">
+          <div>
+            <span class="font-bold text-lg">Dorsal #@update.BibNumber</span>
+            <span class="ml-3 text-blue-600">@update.DistanceKm km</span>
+          </div>
+          <span class="text-xs text-gray-500">
+            @update.Timestamp.ToLocalTime().ToString("HH:mm:ss")
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@code {
+  [Parameter] public int RaceId { get; set; }
+  private readonly List<RaceUpdateDTO> _updates = new();
+
+  protected override void OnInitialized()
+  {
+    // Suscribirse al evento del servicio
+    RaceUpdateService.OnRaceUpdate += HandleRaceUpdate;
+    Console.WriteLine($"[RaceLive] Componente inicializado para carrera {RaceId}");
+  }
+
+  private void HandleRaceUpdate(RaceUpdateDTO update)
+  {
+    // Filtrar solo las actualizaciones de esta carrera
+    if (update.RaceId == RaceId)
+    {
+      Console.WriteLine($"[RaceLive] Actualización recibida: Dorsal={update.BibNumber}, Distancia={update.DistanceKm}");
+      _updates.Add(update);
+      
+      // Blazor Server actualiza automáticamente el UI a través de su SignalR interno
+      InvokeAsync(StateHasChanged);
+    }
+  }
+
+  public void Dispose()
+  {
+    // Importante: desuscribirse para evitar memory leaks
+    RaceUpdateService.OnRaceUpdate -= HandleRaceUpdate;
+    Console.WriteLine($"[RaceLive] Componente disposed para carrera {RaceId}");
+  }
+}

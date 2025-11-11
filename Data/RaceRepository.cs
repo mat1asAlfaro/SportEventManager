@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using SportEventManager.Core;
 using SportEventManager.Data.Persistence;
+using SportEventManager.Core.Hubs;
 using SportEventManager.Models;
 
 namespace SportEventManager.Data
@@ -9,10 +11,12 @@ namespace SportEventManager.Data
   public class RaceRepository : IRaceRepository
   {
     private readonly IDbContextFactory<SportEventDbContext> _contextFactory;
+    private IHubContext<RaceHub> _hubContext;
 
-    public RaceRepository(IDbContextFactory<SportEventDbContext> contextFactory)
+    public RaceRepository(IDbContextFactory<SportEventDbContext> contextFactory, IHubContext<RaceHub> hubContext)
     {
       _contextFactory = contextFactory;
+      _hubContext = hubContext;
     }
 
     public async Task<List<Race>> GetAllRacesAsync()
@@ -80,6 +84,29 @@ namespace SportEventManager.Data
         _context.Races.Remove(race);
         await _context.SaveChangesAsync();
       }
+    }
+
+    public async Task UpdateRaceStatusAsync(int raceId, int bibNumber, double distanceKm)
+    {
+      await using var _context = _contextFactory.CreateDbContext();
+
+      var race = await _context.Races.FindAsync(raceId);
+      if (race == null) return;
+
+      // Logica interna de actualizacion (opcional)
+      await _context.SaveChangesAsync();
+
+      // Emitir actualizacion en tiempo readonly
+      // await _hubContext.Clients.Group(raceId.ToString())
+      //     .SendAsync("ReceiveRaceUpdate", new { DistanceKm = distanceKm, BibNumber = bibNumber });
+      Console.WriteLine($"[REPO] Emitiendo actualización para race_{raceId}: dorsal={bibNumber}, distancia={distanceKm}");
+      await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, bibNumber, distanceKm);
+    }
+
+    public async Task NotifyRaceStartedAsync(int raceId)
+    {
+      await _hubContext.Clients.Group(raceId.ToString())
+            .SendAsync("RaceStarted", new { Message = $"Carrera {raceId} iniciada" });
     }
   }
 }

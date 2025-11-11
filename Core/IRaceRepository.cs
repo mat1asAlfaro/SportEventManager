@@ -9,5 +9,8 @@ namespace SportEventManager.Core
     Task AddRaceAsync(Race race);
     Task UpdateRaceAsync(Race race);
     Task DeleteRaceAsync(int raceId);
+
+    Task UpdateRaceStatusAsync(int raceId, int bibNumber, double distanceKm);
+    Task NotifyRaceStartedAsync(int raceId);
   }
 }
