@@ -164,6 +164,15 @@ namespace SportEventManager.Data
                 throw new Exception("Este participante no tiene dorsal asignado.");
 
             return registration.BibNumber;
+        public async Task<IEnumerable<Registration>> GetByRaceIdAsync(int raceId)
+        {
+            return await _context.Registrations
+        .Include(r => r.Participant)
+        .Include(r => r.Category)
+        .Include(r => r.RegistrationChips)!
+            .ThenInclude(rc => rc.Chip)
+        .Where(r => r.RaceId == raceId)
+        .ToListAsync();
         }
     }
 }

@@ -47,5 +47,16 @@ namespace SportEventManager.Models
             Status = status;
             CreatedAt = DateTime.UtcNow;
         }
+
+        public Registration(int registrationId, int participantId, int raceId, int categoryId, int? bibNumber, string? status)
+        {
+            RegistrationId = registrationId;
+            ParticipantId = participantId;
+            RaceId = raceId;
+            CategoryId = categoryId;
+            BibNumber = bibNumber;
+            Status = status;
+            CreatedAt = DateTime.UtcNow;
+        }
     }
 }
