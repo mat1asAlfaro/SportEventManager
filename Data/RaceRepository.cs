@@ -81,5 +81,9 @@ namespace SportEventManager.Data
         await _context.SaveChangesAsync();
       }
     }
+    public async Task<Race?> GetByIdAsync(int raceId)
+    {
+      return await GetRaceByIdAsync(raceId);
+    }
   }
 }
