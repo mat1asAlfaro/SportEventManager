@@ -14,6 +14,5 @@ namespace SportEventManager.DTOs
         public int? MinAge { get; set; }
         public int? MaxAge { get; set; }
         public ICollection<RaceCategoryDTO>? RaceCategories { get; set; }
-        // public ICollection<RegistrationDTO>? Registrations { get; set; }
     }
 }
