@@ -1,7 +1,8 @@
-@page "/race-live/{RaceId:int}"
+@page "/live/race/{RaceId:int}"
 @rendermode InteractiveServer
 @using SportEventManager.DTOs
 @using SportEventManager.Core.Services
+
 @inject RaceUpdateService RaceUpdateService
 @implements IDisposable
 
@@ -58,7 +59,7 @@ else
     {
       Console.WriteLine($"[RaceLive] Actualización recibida: Dorsal={update.BibNumber}, Distancia={update.DistanceKm}");
       _updates.Add(update);
-      
+
       // Blazor Server actualiza automáticamente el UI a través de su SignalR interno
       InvokeAsync(StateHasChanged);
     }

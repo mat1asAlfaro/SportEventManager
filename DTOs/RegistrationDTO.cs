@@ -16,6 +16,6 @@ namespace SportEventManager.DTOs
         public int CategoryId { get; set; }
         public string? Status { get; set; }
         public int? BibNumber { get; set; }
-        public ICollection<RegistrationChipDTO>? RegistrationChips { get; set; }
+        public ICollection<RegistrationChipDTO> RegistrationChips { get; set; } = new List<RegistrationChipDTO>();
     }
 }

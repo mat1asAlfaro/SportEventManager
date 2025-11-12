@@ -13,6 +13,8 @@ namespace SportEventManager.Models
         public int RaceId { get; set; }
         [Required]
         public int EventId { get; set; }
+        [ForeignKey("EventId")]
+        public Event? Event { get; set; }
         [Required]
         [MaxLength(100)]
         public string? Name { get; set; }
@@ -21,10 +23,10 @@ namespace SportEventManager.Models
         public DateTime StartTime { get; set; }
 
         // Relationships
-        public ICollection<RaceCategory>? RaceCategories { get; set; }
-        public ICollection<Registration>? Registrations { get; set; }
-        public ICollection<Split>? Splits { get; set; }
-        public ICollection<TimeRecord>? TimeRecords { get; set; }
+        public ICollection<RaceCategory> RaceCategories { get; set; } = new List<RaceCategory>();
+        public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
+        public ICollection<Split> Splits { get; set; } = new List<Split>();
+        public ICollection<TimeRecord> TimeRecords { get; set; } = new List<TimeRecord>();
 
         public Race()
         {

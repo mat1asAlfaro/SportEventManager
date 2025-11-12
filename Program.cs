@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using SportEventManager.Components;
@@ -85,6 +86,8 @@ app.MapOpenApi();
 
 // Mapear el Hub de SignalR
 app.MapHub<TimingHub>("/timingHub");
+// app.MapBlazorHub();
+// app.MapFallbackToPage("/");
 
 // ========================================
 // MINIMAL API para registro de tiempos RFID
