@@ -14,6 +14,10 @@ namespace SportEventManager.Core
         Task AddRegistrationAsync(Registration registration);
         Task UpdateRegistrationAsync(Registration registration);
         Task DeleteRegistrationAsync(int registrationId);
+        Task<bool> AssignAllRaceBibsAsync(int raceId);
+        Task<bool> AssignBibNumberAsync(int registrationId);
+        Task<bool> RemoveBibNumberAsync(int registrationId);
+        Task<int?> GetBibNumberAsync(int registrationId);
         Task<IEnumerable<Registration>> GetByRaceIdAsync(int raceId);
     }
 }
