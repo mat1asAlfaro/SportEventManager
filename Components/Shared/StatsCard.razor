@@ -4,10 +4,10 @@
       <h6 class="text-secondary fw-semibold mb-0">@Title</h6>
       @if (!string.IsNullOrEmpty(Icon))
       {
-        <span class="material-symbols-outlined text-secondary @IconClass">@Icon</span>
+        <span class="material-symbols-outlined @IconColor @IconClass">@Icon</span>
       }
     </div>
-    <div class="h2 fw-bold text-primary-color mb-2">@Value</div>
+    <div class="h2 fw-bold @ValueColor mb-2">@Value</div>
     <div class="text-secondary">@Description</div>
   </div>
 </div>
@@ -18,8 +18,10 @@
   [Parameter] public string? Description { get; set; }
   [Parameter] public string? Icon { get; set; }
   [Parameter] public string? IconClass { get; set; } = "";
+  [Parameter] public string? IconColor { get; set; } = "text-secondary";
+  [Parameter] public string? ValueColor { get; set; } = "text-primary-color";
   [Parameter] public string IconStyle { get; set; } = "Regular";
-  private string MaterialClass => IconStyle.ToLower() switch
+  private string MaterialClass => IconStyle!.ToLower() switch
   {
     "outlined" => "material-icons-outlined",
     "rounded" => "material-icons-round",

@@ -28,11 +28,11 @@
           <div class="row">
             <div class="col">
               <label class="form-label fw-semibold">Fecha inicio</label>
-              <input type="datetime-local" class="form-control custom-datetime" @bind="newEvent.StartDate" />
+              <input type="date" class="form-control custom-datetime" @bind="newEvent.StartDate" />
             </div>
             <div class="col">
               <label class="form-label fw-semibold">Fecha fin</label>
-              <input type="datetime-local" class="form-control custom-datetime" @bind="newEvent.EndDate" />
+              <input type="date" class="form-control custom-datetime" @bind="newEvent.EndDate" />
             </div>
           </div>
       </div>
@@ -42,7 +42,7 @@
           <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
         </button>
         <button class="btn btn-primary fw-semibold" @onclick="HandleSave">
-          <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar evento
+          <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar Evento
         </button>
       </div>
     </div>

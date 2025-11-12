@@ -25,6 +25,14 @@ namespace SportEventManager.Data
       return await Task.FromResult(_context.Races.ToList());
     }
 
+    public async Task<List<Race>> GetRacesByEventIdAsync(int eventId)
+    {
+      await using var _context = _contextFactory.CreateDbContext();
+      return await _context.Races
+        .Where(r => r.EventId == eventId)
+        .ToListAsync();
+    }
+
     public async Task<Race?> GetRaceByIdAsync(int raceId)
     {
       await using var _context = _contextFactory.CreateDbContext();
@@ -50,6 +58,7 @@ namespace SportEventManager.Data
 
     public async Task UpdateRaceAsync(Race race)
     {
+      Console.WriteLine($"UPDATE RACE: {race.MaxParticipants}");
       await using var _context = _contextFactory.CreateDbContext();
 
       var existingRace = await _context.Races
@@ -57,6 +66,12 @@ namespace SportEventManager.Data
           .FirstOrDefaultAsync(r => r.RaceId == race.RaceId);
 
       if (existingRace == null) throw new Exception("Race not found");
+
+      existingRace.Name = race.Name;
+      existingRace.DistanceKm = race.DistanceKm;
+      existingRace.MaxParticipants = race.MaxParticipants;
+      existingRace.StartTime = race.StartTime;
+      existingRace.EventId = race.EventId;
 
       var newCategoryIds = race.RaceCategories!.Select(rc => rc.CategoryId).ToList();
 

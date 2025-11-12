@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104025359_AtributteBibNumberRegistration")]
+    partial class AtributteBibNumberRegistration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -809,31 +812,6 @@ namespace SportEventManager.Migrations
                             SplitId = 4,
                             Timestamp = new DateTime(2025, 10, 15, 8, 20, 0, 0, DateTimeKind.Unspecified)
                         });
-                });
-
-            modelBuilder.Entity("UserAccount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserAccounts");
                 });
 
             modelBuilder.Entity("SportEventManager.Models.Race", b =>

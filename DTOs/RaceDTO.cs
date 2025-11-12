@@ -9,7 +9,8 @@ namespace SportEventManager.DTOs
     {
         public int RaceId { get; set; }
         public int EventId { get; set; }
-        public string? Name { get; set; }
+        public string? RaceName { get; set; }
+        public string? EventName { get; set; }
         public double DistanceKm { get; set; }
         public int TotalParticipantRegistration { get; set; }
         public int MaxParticipants { get; set; }

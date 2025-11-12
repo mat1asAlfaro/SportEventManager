@@ -14,8 +14,10 @@ a,
   display: flex;
   justify-content: center;
   align-items: center;
+  max-height: 36px;
   border: none;
   border-radius: 8px !important;
+  font-size: 14px !important;
 }
 
 .btn-sm:hover {
@@ -82,9 +84,16 @@ h1:focus {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stats-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+button {
+  transform: scale(1) translateY(0);
+  transition-property: transform, box-shadow !important;
+  transition-duration: 0.3s, 0.2s !important;
+  transition-timing-function: ease, ease !important;
+}
+
+button:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .event-card {
@@ -98,6 +107,18 @@ h1:focus {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+@media (max-width: 768px) {
+  .scrollable-races {
+    max-height: 190px; /* o el valor que prefieras */
+  }
+}
+
+.race-actions {
+  min-width: 110px; /* o el valor que prefieras */
+  flex-shrink: 0; /* evita que se comprima cuando el texto crece */
+  justify-content: flex-end;
 }
 
 .material-symbols-outlined {
@@ -134,8 +155,10 @@ h1:focus {
 }
 
 .badge {
-  display: inline-block;
-  padding: 0.25rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
   border-radius: 8px;
   font-weight: 600 !important;
   font-size: 0.8rem;
@@ -183,27 +206,64 @@ h1:focus {
   border-top: 1px solid var(--color-border) !important;
 }
 
-select.form-select {
+select.form-select,
+.rz-dropdown {
   cursor: pointer;
 }
 
 .form-control,
-.form-select {
+.form-select,
+.rz-textbox,
+.rz-dropdown {
   background-color: var(--color-input-background);
-  border: 1px solid var(--color-border) !important;
+  border: none !important;
   color: var(--color-secondary-text);
 }
 
 .form-control:focus,
-.form-select:focus {
+.form-select:focus,
+.rz-textbox:hover,
+.rz-textbox:focus,
+.rz-dropdown:hover,
+.rz-dropdown:focus {
   background-color: color-mix(
     in srgb,
     var(--color-input-background) 90%,
     transparent
-  );
-  color: inherit;
-  border-color: none;
-  box-shadow: none;
+  ) !important;
+  color: inherit !important;
+  border-color: none !important;
+  box-shadow: none !important;
+}
+
+.rz-dropdown-panel {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: none !important;
+  background-color: var(--color-border) !important;
+}
+
+.rz-dropdown-item {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.9rem !important;
+  color: var(--color-secondary-text) !important;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+/* Hover sobre las opciones */
+.rz-dropdown-item:hover {
+  background-color: var(--color-input-background) !important;
+  color: var(--color-primary-text) !important;
+}
+
+/* Opción seleccionada */
+.rz-dropdown-item.rz-state-highlight {
+  background-color: var(--color-primary, #0d6efd) !important;
+  color: var(--color-primary-text) !important;
+}
+
+/* Quitar mayúsculas automáticas si las hubiera */
+.rz-dropdown-item {
+  text-transform: none !important;
 }
 
 .select-wrapper {
@@ -227,8 +287,16 @@ select.form-select {
   font-size: 20px;
 }
 
+.rz-button {
+  background-color: var(--color-input-background) !important;
+}
+
+.rz-button:hover {
+  box-shadow: none !important;
+}
+
 .custom-datetime::-webkit-calendar-picker-indicator {
-  filter: invert(92%) sepia(6%) saturate(0%) hue-rotate(175deg) brightness(97%);
+  filter: invert(92%) sepia(6%) saturate(0%) hue-rotate(175deg) brightness(97%) !important;
   cursor: pointer;
 }
 
@@ -250,19 +318,29 @@ select.form-select {
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
+.modal-dialog-scrollable .modal-body {
+  max-height: 75vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
 .split-scroll::-webkit-scrollbar,
-.scrollable-races::-webkit-scrollbar {
+.scrollable-races::-webkit-scrollbar,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar {
   width: 6px;
 }
 
 .split-scroll::-webkit-scrollbar-thumb,
-.scrollable-races::-webkit-scrollbar-thumb {
+.scrollable-races::-webkit-scrollbar-thumb,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar {
   background-color: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
 .split-scroll::-webkit-scrollbar-thumb:hover,
-.scrollable-races::-webkit-scrollbar-thumb:hover {
+.scrollable-races::-webkit-scrollbar-thumb:hover,
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar {
   background-color: rgba(255, 255, 255, 0.6);
 }
 
@@ -280,7 +358,152 @@ select.form-select {
   background: var(--color-card-background);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   backdrop-filter: blur(10px);
   height: 100%;
+}
+
+/* Participants Page */
+.rz-data-row td {
+  border: none !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  background-color: var(--color-card-background) !important;
+
+  span {
+    color: var(--color-primary-color) !important;
+  }
+}
+
+.rz-grid-table thead {
+  min-width: 376px !important;
+  tr span {
+    color: var(--color-primary-text) !important;
+  }
+  th {
+    border: none !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    background-color: var(--color-card-background) !important;
+  }
+}
+
+.rz-data-grid {
+  border: 1px solid var(--color-border) !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rz-datatable .rz-column-title {
+  text-transform: none !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.rz-pager {
+  background-color: var(--color-card-background);
+  span {
+    color: var(--color-primary-text);
+  }
+  a {
+    background-color: var(--color-input-background);
+  }
+}
+
+.rz-pager-pages .rz-state-active {
+  background-color: var(--color-input-background);
+  color: var(--color-primary-text);
+  border: none;
+}
+
+.rz-pager-element:hover {
+  background-color: var(--color-border);
+  box-shadow: none !important;
+  border: none;
+}
+
+.custom-data-grid-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  background-color: transparent;
+}
+
+.rz-datatable-emptymessage {
+  background-color: transparent !important;
+}
+
+span.rz-badge.kit-badge {
+  background-image: none !important; /* elimina degradados */
+  text-transform: none !important;
+  font-weight: normal !important;
+  border-radius: 8px;
+  padding: 0.25rem 0.7rem;
+}
+
+span.rz-badge.number-badge-assigned,
+span.rz-badge.kit-badge-delivered {
+  color: var(--color-success) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-success) 20%,
+    transparent
+  ) !important;
+  border: 1px solid var(--color-success) !important;
+}
+
+span.rz-badge.number-badge-unassigned,
+span.rz-badge.kit-badge-pending {
+  color: var(--color-warning) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-warning) 20%,
+    transparent
+  ) !important;
+  border: 1px solid var(--color-warning) !important;
+}
+
+.btn-size {
+  min-height: 0 !important;
+  font-size: 0.875rem;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background-color: transparent !important;
+}
+
+.btn-success {
+  color: var(--color-success) !important;
+  border: 1px solid var(--color-success);
+}
+
+.btn-error {
+  color: var(--color-error) !important;
+  border: 1px solid var(--color-error);
+}
+
+.btn-size:hover {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+
+  .btn-success:hover {
+    border-color: var(--color-success) !important;
+  }
+  .btn-error:hover {
+    border-color: var(--color-error) !important;
+  }
+}
+
+.modal-dialog-limit {
+  max-width: 600px; /* ajusta el ancho del modal completo */
+}
+
+.modal-dialog-scrollable .modal-body {
+  overflow-y: auto;
+  max-height: 75vh;
 }

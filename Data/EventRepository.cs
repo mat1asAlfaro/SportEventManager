@@ -61,7 +61,7 @@ namespace SportEventManager.Data
                 {
                     RaceId = race.RaceId,
                     EventId = race.EventId,
-                    Name = race.Name,
+                    RaceName = race.Name,
                     DistanceKm = race.DistanceKm,
                     MaxParticipants = race.MaxParticipants,
                     StartTime = race.StartTime,

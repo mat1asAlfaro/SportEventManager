@@ -9,7 +9,7 @@ using SportEventManager.Data.Persistence;
 using SportEventManager.Models;
 using SportEventManager.Controllers;
 using Microsoft.AspNetCore.ResponseCompression;
-using SportEventManager.Services;
+using Radzen;
 using SportEventManager.Hubs;
 using SportEventManager.DTOs;
 
@@ -23,6 +23,8 @@ builder.Services.AddControllers();
 // Servicio singleton para notificaciones en tiempo real
 builder.Services.AddSingleton<RaceUpdateService>();
 
+builder.Services.AddRadzenComponents();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -35,13 +37,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
-builder.Services.AddScoped<IEventRepository, EventRepository>();
-builder.Services.AddScoped<IRaceRepository, RaceRepository>();
-builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
-builder.Services.AddScoped<ISplitRepository, SplitRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<ISplitRepository, SplitRepository>();
+builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<ITimeRecordRepository, TimeRecordRepository>();
 builder.Services.AddScoped<ITimingCalculationsService, TimingCalculationsService>();
 

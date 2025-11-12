@@ -128,8 +128,6 @@
     })
     .ToList();
 
-    await RaceRepository.UpdateRaceAsync(EditableRace);
-
     await OnSave.InvokeAsync(EditableRace);
     IsVisible = false;
   }
