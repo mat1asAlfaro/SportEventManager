@@ -1,4 +1,5 @@
 using SportEventManager.Models;
+using SportEventManager.DTOs;
 
 namespace SportEventManager.Core
 {
@@ -14,5 +15,10 @@ namespace SportEventManager.Core
         Task<TimeRecord> UpdateAsync(TimeRecord timeRecord);
         Task<bool> DeleteAsync(int id);
         Task<bool> ExistsAsync(int chipId, int splitId);
+
+        Task<TimeRecordResponseDTO?> RegisterChipReadingAsync(ChipReadingDTO reading);
+        Task<List<TimeRecordResponseDTO>> GetTimeRecordsByRaceAsync(int raceId);
+        Task<RaceStatsDTO> GetRaceStatsAsync(int raceId);
+        Task<LiveParticipantDataDTO?> GetLiveParticipantDataByBibAsync(int raceId, int bibNumber);
     }
 }

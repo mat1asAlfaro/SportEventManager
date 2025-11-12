@@ -21,13 +21,13 @@ namespace SportEventManager.Services
         public string CalculatePace(TimeSpan time, double distanceKm)
         {
             if (distanceKm <= 0) return "N/A";
-            
+
             var totalMinutes = time.TotalMinutes;
             var paceMinutes = totalMinutes / distanceKm;
-            
+
             var minutes = (int)paceMinutes;
             var seconds = (int)((paceMinutes - minutes) * 60);
-            
+
             return $"{minutes}:{seconds:D2} min/km";
         }
 

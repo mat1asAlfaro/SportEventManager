@@ -17,7 +17,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
-    {   
+    {
         options.Cookie.Name = "auth_token";
         options.LoginPath = "/admin";
         options.Cookie.MaxAge = TimeSpan.FromHours(1);
@@ -34,18 +34,12 @@ builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
 builder.Services.AddScoped<ISplitRepository, SplitRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+builder.Services.AddScoped<ITimeRecordRepository, TimeRecordRepository>();
+builder.Services.AddScoped<ITimingCalculationsService, TimingCalculationsService>();
 
 builder.Services.AddDbContextFactory<SportEventDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Registrar repositorio de TimeRecord
-builder.Services.AddScoped<ITimeRecordRepository, TimeRecordRepository>();
-
-// Registrar servicios de timing
-builder.Services.AddScoped<ITimingCalculationsService, TimingCalculationsService>();
-builder.Services.AddScoped<ITimingService, TimingService>();
-
-// Agregar SignalR
 builder.Services.AddSignalR();
 
 // Agregar OpenAPI/Swagger
@@ -86,7 +80,7 @@ app.MapHub<TimingHub>("/timingHub");
 // Endpoint principal: Registrar lectura de chip
 app.MapPost("/api/timing/register", async (
     ChipReadingDTO reading,
-    ITimingService timingService,
+    ITimeRecordRepository timeRecordRepository,
     ILogger<Program> logger) =>
 {
     try
@@ -97,8 +91,8 @@ app.MapPost("/api/timing/register", async (
             return Results.BadRequest(new { error = "ChipId and SplitId must be greater than 0" });
         }
 
-        var result = await timingService.RegisterChipReadingAsync(reading);
-        
+        var result = await timeRecordRepository.RegisterChipReadingAsync(reading);
+
         if (result == null)
         {
             logger.LogWarning($"Failed to register chip reading: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
@@ -121,31 +115,12 @@ app.MapPost("/api/timing/register", async (
 .WithName("RegisterChipReading")
 .WithOpenApi();
 
-// Endpoint alternativo simple (para curl rápido)
-app.MapPost("/api/timing/chip/{chipId}/split/{splitId}", async (
-    int chipId,
-    int splitId,
-    ITimingService timingService) =>
-{
-    var reading = new ChipReadingDTO
-    {
-        ChipId = chipId,
-        SplitId = splitId,
-        Timestamp = DateTime.UtcNow
-    };
-
-    var result = await timingService.RegisterChipReadingAsync(reading);
-    return result != null ? Results.Ok(result) : Results.BadRequest("Failed to register");
-})
-.WithName("RegisterChipReadingSimple")
-.WithOpenApi();
-
 // Obtener todos los tiempos de una carrera
 app.MapGet("/api/timing/race/{raceId}", async (
     int raceId,
-    ITimingService timingService) =>
+    ITimeRecordRepository timeRecordRepository) =>
 {
-    var records = await timingService.GetTimeRecordsByRaceAsync(raceId);
+    var records = await timeRecordRepository.GetTimeRecordsByRaceAsync(raceId);
     return Results.Ok(records);
 })
 .WithName("GetTimeRecordsByRace")
@@ -154,9 +129,9 @@ app.MapGet("/api/timing/race/{raceId}", async (
 // Obtener estadísticas de una carrera
 app.MapGet("/api/timing/race/{raceId}/stats", async (
     int raceId,
-    ITimingService timingService) =>
+    ITimeRecordRepository timeRecordRepository) =>
 {
-    var stats = await timingService.GetRaceStatsAsync(raceId);
+    var stats = await timeRecordRepository.GetRaceStatsAsync(raceId);
     return Results.Ok(stats);
 })
 .WithName("GetRaceStats")
@@ -166,13 +141,13 @@ app.MapGet("/api/timing/race/{raceId}/stats", async (
 app.MapGet("/api/timing/race/{raceId}/live/bib/{bibNumber}", async (
     int raceId,
     int bibNumber,
-    ITimingService timingService,
+    ITimeRecordRepository timeRecordRepository,
     ILogger<Program> logger) =>
 {
     try
     {
-        var data = await timingService.GetLiveParticipantDataByBibAsync(raceId, bibNumber);
-        
+        var data = await timeRecordRepository.GetLiveParticipantDataByBibAsync(raceId, bibNumber);
+
         if (data == null)
         {
             logger.LogWarning($"No data found for bib {bibNumber} in race {raceId}");
