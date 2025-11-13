@@ -127,12 +127,24 @@ namespace SportEventManager.Data.Persistence
 
             // Seed Data
             modelBuilder.Entity<Event>().HasData(
-                new Event { EventId = 1, Name = "Maratón Anual", Description = "Maratón de 10K y 5K", StartDate = new DateTime(2025, 12, 1), EndDate = new DateTime(2025, 12, 2), Location = "Montevideo", CreatedAt = new DateTime(2025, 10, 15) }
+                new Event { EventId = 1, Name = "Maratón Anual", Description = "Maratón de 10K y 5K", StartDate = new DateTime(2025, 12, 1), EndDate = new DateTime(2025, 12, 2), Location = "Montevideo", CreatedAt = new DateTime(2025, 10, 15) },                
+                new Event { EventId = 2, Name = "Recorre Maldonado 8va etapa", Description = "Una carrera en Piria", StartDate = new DateTime(2025, 11, 8), EndDate = new DateTime(2025, 11, 8), Location = "", CreatedAt = new DateTime(2025, 10, 15) },
+                new Event { EventId = 3, Name = "Recorre Maldonado 9na etapa", Description = "Última etapa de Recorre Maldonado. ", StartDate = new DateTime(2025, 11, 29), EndDate = new DateTime(2026, 11, 29), Location = "Maldonado", CreatedAt = new DateTime(2025, 10, 15) },
+                new Event { EventId = 4, Name = "San Fernando 2026", Description = "Primera carrera del año en Punta", StartDate = new DateTime(2026, 1, 10), EndDate = new DateTime(2026, 1, 10), Location = "Punta del Este", CreatedAt = new DateTime(2025, 10, 15) },
+                new Event { EventId = 5, Name = "Half Marathon", Description = "Media Maratón anual de Montevideo.", StartDate = new DateTime(2026, 8, 3), EndDate = new DateTime(2026, 8, 3), Location = "Montevideo", CreatedAt = new DateTime(2025, 10, 15) }
             );
 
             modelBuilder.Entity<Race>().HasData(
                 new Race { RaceId = 1, EventId = 1, Name = "10K Adultos", DistanceKm = 10, MaxParticipants = 100, StartTime = new DateTime(2025, 12, 1, 09, 00, 00) },
-                new Race { RaceId = 2, EventId = 1, Name = "5K Junior", DistanceKm = 5, MaxParticipants = 80, StartTime = new DateTime(2025, 12, 1, 08, 00, 00) }
+                new Race { RaceId = 2, EventId = 1, Name = "5K Junior", DistanceKm = 5, MaxParticipants = 80, StartTime = new DateTime(2025, 12, 1, 08, 00, 00) },
+                new Race { RaceId = 3, EventId = 2, Name = "10K", DistanceKm = 10, MaxParticipants = 1000, StartTime = new DateTime(2025, 11, 8, 17, 00, 00) },  
+                new Race { RaceId = 4, EventId = 2, Name = "5 k", DistanceKm = 5, MaxParticipants = 1000, StartTime = new DateTime(2025, 11, 8, 17, 00, 00) },
+                new Race { RaceId = 5, EventId = 3, Name = "10k", DistanceKm = 10, MaxParticipants = 1000, StartTime = new DateTime(2025, 11, 29, 18, 00, 00) },
+                new Race { RaceId = 6, EventId = 3, Name = "5k", DistanceKm = 5, MaxParticipants = 1000, StartTime = new DateTime(2025, 11, 29, 18, 00, 00) },
+                new Race { RaceId = 7, EventId = 4, Name = "10k", DistanceKm = 10, MaxParticipants = 4500, StartTime = new DateTime(2026, 01, 10, 20, 00, 00) },
+                new Race { RaceId = 8, EventId = 4, Name = "5k", DistanceKm = 5, MaxParticipants = 4500, StartTime = new DateTime(2026, 01, 10, 20, 00, 00) },
+                new Race { RaceId = 9, EventId = 4, Name = "San Fernandito", DistanceKm = 2, MaxParticipants = 1000, StartTime = new DateTime(2026, 01, 10, 12, 00, 00) },
+                new Race { RaceId = 10, EventId = 5, Name = "21k", DistanceKm = 21, MaxParticipants = 4500, StartTime = new DateTime(2026, 8, 3, 9, 00, 00) }
             );
 
             modelBuilder.Entity<Category>().HasData(
@@ -144,11 +156,18 @@ namespace SportEventManager.Data.Persistence
             );
 
             modelBuilder.Entity<RaceCategory>().HasData(
-                new RaceCategory { RaceId = 1, CategoryId = 3 },
-                new RaceCategory { RaceId = 2, CategoryId = 3 },
-                new RaceCategory { RaceId = 2, CategoryId = 4 }
+                new RaceCategory { RaceId = 1, CategoryId = 3 }, new RaceCategory { RaceId = 1, CategoryId = 4 },
+                new RaceCategory { RaceId = 2, CategoryId = 3 }, new RaceCategory { RaceId = 2, CategoryId = 4 },
+                new RaceCategory { RaceId = 3, CategoryId = 3 }, new RaceCategory { RaceId = 3, CategoryId = 4 },
+                new RaceCategory { RaceId = 4, CategoryId = 3 }, new RaceCategory { RaceId = 4, CategoryId = 4 },
+                new RaceCategory { RaceId = 5, CategoryId = 3 }, new RaceCategory { RaceId = 5, CategoryId = 4 },
+                new RaceCategory { RaceId = 6, CategoryId = 3 }, new RaceCategory { RaceId = 6, CategoryId = 4 },
+                new RaceCategory { RaceId = 7, CategoryId = 3 }, new RaceCategory { RaceId = 7, CategoryId = 4 },
+                new RaceCategory { RaceId = 8, CategoryId = 3 }, new RaceCategory { RaceId = 8, CategoryId = 4 },
+                new RaceCategory { RaceId = 9, CategoryId = 5 }
             );
 
+            // Participants con nuevos campos requeridos
             modelBuilder.Entity<Participant>().HasData(
                 new Participant { ParticipantId = 1, FirstName = "Matias", LastName = "Alfaro", Email = "matias@test.com", DocumentNumber = "12345678", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
                 new Participant { ParticipantId = 2, FirstName = "Ana", LastName = "Gomez", Email = "ana@test.com", DocumentNumber = "87654321", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
