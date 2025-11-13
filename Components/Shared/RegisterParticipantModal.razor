@@ -34,37 +34,45 @@
           }
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Documento</label>
-            <input class="form-control" maxlength="8" placeholder="12345678" inputmode="numeric" @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required disabled="@(IsExistingParticipant || IsFormLocked)" />
-            <div class="form-text text-secondary">Ingresa tu número de documento y verificaremos si tus datos ya fueron cargados.</div>
+            <label class="form-label small fw-semibold">Documento de Identidad</label>
+            <input class="form-control placeholder-white" maxlength="8" placeholder="12345678" inputmode="numeric"
+              @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required
+              disabled="@(IsExistingParticipant || IsFormLocked)" />
+            <div class="form-text text-secondary">Ingresa tu número de documento y verificaremos si tus datos ya fueron
+              cargados.</div>
           </div>
 
           <div class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold">Nombre</label>
-              <input class="form-control" placeholder="Ej: Juan" @bind="EditableParticipant.FirstName" required disabled="@IsFormLocked" />
+              <input class="form-control placeholder-white" placeholder="Ej: Juan" @bind="EditableParticipant.FirstName"
+                required disabled="@IsFormLocked" />
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold">Apellido</label>
-              <input class="form-control" placeholder="Ej: Pérez" @bind="EditableParticipant.LastName" required disabled="@IsFormLocked" />
+              <input class="form-control placeholder-white" placeholder="Ej: Pérez" @bind="EditableParticipant.LastName"
+                required disabled="@IsFormLocked" />
             </div>
           </div>
 
-            <div class="row g-3">
+          <div class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold">Email</label>
-              <input type="email" class="form-control" placeholder="nombre@correo.com" @bind="EditableParticipant.Email" required disabled="@IsFormLocked" />
+              <input type="email" class="form-control placeholder-white" placeholder="nombre@correo.com"
+                @bind="EditableParticipant.Email" required disabled="@IsFormLocked" />
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label small fw-semibold">Fecha de nacimiento</label>
-              <input type="date" class="form-control" placeholder="dd/mm/aaaa" min="@MinBirthDate" max="@MaxBirthDate" @bind="EditableParticipant.Birthdate" required disabled="@IsFormLocked" />
+              <label class="form-label small fw-semibold">Fecha de Nacimiento</label>
+              <input type="date" class="form-control" placeholder="dd/mm/aaaa" min="@MinBirthDate" max="@MaxBirthDate"
+                @bind="EditableParticipant.Birthdate" required disabled="@IsFormLocked" />
             </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label small fw-semibold">Género</label>
             <div class="select-wrapper">
-              <InputSelect TValue="Gender?" class="form-select" @bind-Value="EditableParticipant.Gender" disabled="@IsFormLocked">
+              <InputSelect TValue="Gender ?" class="form-select" @bind-Value="EditableParticipant.Gender"
+                disabled="@IsFormLocked">
                 <option value="">Selecciona un género</option>
                 @foreach (var g in Enum.GetValues(typeof(Gender)).Cast<Gender>())
                 {
@@ -80,8 +88,10 @@
           <button type="button" class="btn btn-secondary fw-semibold" @onclick="Close">
             <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
           </button>
-          <button type="submit" class="btn btn-primary fw-semibold" disabled="@(IsSaving || IsSearching || IsFormLocked)">
-            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ? "Buscando..." : "Confirmar inscripción"))
+          <button type="submit" class="btn btn-primary fw-semibold"
+            disabled="@(IsSaving || IsSearching || IsFormLocked)">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ?
+                        "Buscando..." : "Confirmar inscripción"))
           </button>
         </div>
       </EditForm>
@@ -234,7 +244,8 @@
           {
             ErrorMessage = "El participante ya está inscripto en esta carrera.";
             IsSaving = false;
-            Logger?.LogInformation("Intento duplicado de inscripción. ParticipantId={ParticipantId}, RaceId={RaceId}", byDoc.ParticipantId, RaceId);
+            Logger?.LogInformation("Intento duplicado de inscripción. ParticipantId={ParticipantId}, RaceId={RaceId}",
+            byDoc.ParticipantId, RaceId);
             return; // bloquear alta
           }
 
@@ -257,7 +268,8 @@
         {
           ErrorMessage = "No es posible inscribirte a esta carrera porque no es de tu categoría.";
           IsSaving = false;
-          Logger?.LogInformation("Categoría no encontrada para participante. Edad={Age}, Género={Gender}, RaceId={RaceId}", age, EditableParticipant.Gender, RaceId);
+          Logger?.LogInformation("Categoría no encontrada para participante. Edad={Age}, Género={Gender}, RaceId={RaceId}", age,
+          EditableParticipant.Gender, RaceId);
           return;
         }
 
@@ -291,7 +303,7 @@
         await RegistrationRepository.AddRegistrationAsync(registration);
 
         Logger?.LogInformation("Inscripción creada correctamente. RegistrationId={RegistrationId}, ParticipantId={ParticipantId}, RaceId={RaceId}, CategoryId={CategoryId}",
-          registration.RegistrationId, registration.ParticipantId, registration.RaceId, registration.CategoryId);
+        registration.RegistrationId, registration.ParticipantId, registration.RaceId, registration.CategoryId);
 
         IsVisible = false;
         IsSaving = false;
@@ -316,13 +328,15 @@
     {
       IsSaving = false;
       ErrorMessage = ex.Message;
-      Logger?.LogWarning(ex, "ArgumentException al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}", EditableParticipant.DocumentNumber, RaceId, EventId);
+      Logger?.LogWarning(ex, "ArgumentException al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}",
+      EditableParticipant.DocumentNumber, RaceId, EventId);
     }
     catch (Exception ex)
     {
       IsSaving = false;
       ErrorMessage = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
-      Logger?.LogError(ex, "Error inesperado al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}", EditableParticipant.DocumentNumber, RaceId, EventId);
+      Logger?.LogError(ex, "Error inesperado al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}",
+      EditableParticipant.DocumentNumber, RaceId, EventId);
     }
   }
 
@@ -348,14 +362,14 @@
     };
 
     var candidates = RaceCategories
-      .Where(rc => rc.Category != null)
-      .Where(rc =>
-        // Género compatible: mismo símbolo o categoría mixta "X"
-        (rc.Category!.Gender == genderSymbol || rc.Category!.Gender == "X")
-        && (!rc.Category!.MinAge.HasValue || age >= rc.Category!.MinAge.Value)
-        && (!rc.Category!.MaxAge.HasValue || age <= rc.Category!.MaxAge.Value)
-      )
-      .ToList();
+    .Where(rc => rc.Category != null)
+    .Where(rc =>
+    // Género compatible: mismo símbolo o categoría mixta "X"
+    (rc.Category!.Gender == genderSymbol || rc.Category!.Gender == "X")
+    && (!rc.Category!.MinAge.HasValue || age >= rc.Category!.MinAge.Value)
+    && (!rc.Category!.MaxAge.HasValue || age <= rc.Category!.MaxAge.Value)
+    )
+    .ToList();
 
     if (!candidates.Any())
       return null;
@@ -374,7 +388,8 @@
 
   private string GetInfoAlertClass()
   {
-    if (!string.IsNullOrWhiteSpace(InfoMessage) && InfoMessage.Contains("Participante encontrado", StringComparison.OrdinalIgnoreCase))
+    if (!string.IsNullOrWhiteSpace(InfoMessage) && InfoMessage.Contains("Participante encontrado",
+    StringComparison.OrdinalIgnoreCase))
       return "alert alert-success"; // verde
 
     return "alert alert-warning"; // por defecto (naranja)
