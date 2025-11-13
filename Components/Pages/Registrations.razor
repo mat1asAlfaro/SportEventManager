@@ -113,7 +113,7 @@
                     {
                         foreach (var race in SelectedEvent.Races.OrderBy(r => r.StartTime))
                         {
-                            <option value="@race.RaceId">@race.Name (@race.DistanceKm km) - @race.StartTime.ToString("dd/MM/yyyy HH:mm")</option>
+                            <option value="@race.RaceId">@race.RaceName (@race.DistanceKm km) - @race.StartTime.ToString("dd/MM/yyyy HH:mm")</option>
                         }
                     }
                 </select>
