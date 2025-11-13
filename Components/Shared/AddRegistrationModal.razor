@@ -1,0 +1,173 @@
+@using SportEventManager.Core
+@using SportEventManager.Models
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@inherits LayoutComponentBase
+@inject IEventRepository EventRepository
+@inject IRaceRepository RaceRepository
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-dialog-limit">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nueva Inscripción</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <div class="modal-body">
+        <EditForm Model="@NewParticipant" OnValidSubmit="@HandleValidSubmit">
+          <DataAnnotationsValidator />
+          <ValidationSummary />
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nombre</label>
+            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su nombre"
+              @bind-Value="NewParticipant.FirstName" />
+            <ValidationMessage For="@(() => NewParticipant.FirstName)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Apellido</label>
+            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su apellido"
+              @bind-Value="NewParticipant.LastName" />
+            <ValidationMessage For="@(() => NewParticipant.LastName)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su email"
+              @bind-Value="NewParticipant.Email" />
+            <ValidationMessage For="@(() => NewParticipant.Email)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Documento de Identidad</label>
+            <InputText type="text" class="form-control placeholder-white"
+              placeholder="Ingrese su documento de identidad" @bind-Value="NewParticipant.DocumentNumber" />
+            <ValidationMessage For="@(() => NewParticipant.DocumentNumber)" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Fecha de Cumpleaños</label>
+            <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" />
+            <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-semibold mb-2">Género</h6>
+            <InputSelect class="form-select" @bind-Value="NewParticipant.Gender">
+              <option hidden value="">Selecciona un género</option>
+              @foreach (var gender in Enum.GetValues(typeof(Gender)))
+              {
+                var displayName = gender.GetType()
+                .GetMember(gender.ToString()!)
+                .First()
+                .GetCustomAttribute<DisplayAttribute>()?
+                .Name ?? gender.ToString();
+
+                <option value="@gender">@displayName</option>
+              }
+            </InputSelect>
+            <ValidationMessage For="@(() => NewParticipant.Gender)" />
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-semibold mb-2">Evento</h6>
+            <select class="form-select" @onchange="EventChanged">
+              <option hidden selected>Selecciona un evento</option>
+              @foreach (var ev in Events)
+              {
+                <option value="@ev.EventId">@ev.Name</option>
+              }
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-semibold mb-2">Carrera</h6>
+            <select class="form-select" @bind="SelectedRaceId">
+              <option hidden selected>Selecciona una carrera</option>
+              @if (Races != null && Races.Any())
+              {
+                @foreach (var race in Races)
+                {
+                  <option value="@race.RaceId">@race.Name</option>
+                }
+              }
+              else
+              {
+                <option selected>No hay carreras disponibles</option>
+              }
+            </select>
+          </div>
+
+          <div class="modal-footer p-0 pt-3">
+            <button type="button" class="btn btn-secondary fw-semibold" @onclick="Close">
+              <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary fw-semibold me-0 ">
+              <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar Inscripción
+            </button>
+          </div>
+        </EditForm>
+      </div>
+    </div>
+  </div>
+</div>
+
+@code {
+  private bool IsVisible { get; set; }
+  private Participant NewParticipant = new();
+  private Registration NewRegistration = new();
+  private List<Event> Events = new();
+  private List<Race> Races = new();
+  private int? SelectedEventId;
+  private int? SelectedRaceId;
+
+  [Parameter] public EventCallback<Registration> OnSave { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    Events = (await EventRepository.GetAllEventsAsync()).ToList();
+  }
+
+  private async Task EventChanged(ChangeEventArgs e)
+  {
+    if (int.TryParse(e.Value?.ToString(), out var eventId))
+    {
+      SelectedEventId = eventId;
+      Races = (await RaceRepository.GetRacesByEventIdAsync(eventId)).ToList();
+    }
+    else
+    {
+      SelectedEventId = null;
+      Races.Clear();
+    }
+
+    SelectedRaceId = null;
+    StateHasChanged();
+  }
+
+  public void Show()
+  {
+    NewParticipant = new Participant();
+    NewRegistration = new Registration();
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task HandleValidSubmit()
+  {
+    if (SelectedEventId == null || SelectedRaceId == null)
+      return;
+
+    if (OnSave.HasDelegate)
+      await OnSave.InvokeAsync(NewRegistration);
+
+    IsVisible = false;
+  }
+
+  private void Close()
+  {
+    IsVisible = false;
+  }
+}

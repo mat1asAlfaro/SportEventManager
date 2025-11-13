@@ -10,23 +10,29 @@ namespace SportEventManager.Models
     {
         [Key]
         public int RegistrationId { get; set; }
+
         [Required]
         public int ParticipantId { get; set; }
         public Participant? Participant { get; set; }
+
         [Required]
         public int RaceId { get; set; }
         public Race? Race { get; set; }
+
         [Required]
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
+
         [MaxLength(20)]
         public string? Status { get; set; } = "Pending";
+
+        [Range(1, int.MaxValue)]
+        public int? BibNumber { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Relationships
         public ICollection<RegistrationChip>? RegistrationChips { get; set; }
-
-
 
         public Registration()
         {
@@ -38,6 +44,17 @@ namespace SportEventManager.Models
             ParticipantId = participantId;
             RaceId = raceId;
             CategoryId = categoryId;
+            Status = status;
+            CreatedAt = DateTime.UtcNow;
+        }
+
+        public Registration(int registrationId, int participantId, int raceId, int categoryId, int? bibNumber, string? status)
+        {
+            RegistrationId = registrationId;
+            ParticipantId = participantId;
+            RaceId = raceId;
+            CategoryId = categoryId;
+            BibNumber = bibNumber;
             Status = status;
             CreatedAt = DateTime.UtcNow;
         }

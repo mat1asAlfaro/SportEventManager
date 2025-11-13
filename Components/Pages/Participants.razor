@@ -1,0 +1,496 @@
+@page "/admin/participants"
+@using Radzen
+@using Radzen.Blazor
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@using SportEventManager.Models
+@using System.Linq.Expressions
+@using System.Xml.Schema
+@rendermode InteractiveServer
+@inject IParticipantRepository ParticipantRepository
+@inject IRegistrationRepository RegistrationRepository
+@inject NotificationService NotificationService
+
+<PageTitle>Participantes</PageTitle>
+
+<RadzenNotification />
+
+<div class="container-lg px-4 px-sm-5 px-lg-4">
+
+  @* Header *@
+  <div
+    class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 mb-4">
+    <div>
+      <h1 class="fs-3 fw-bold text-primary mb-2">Gestión de Corredores</h1>
+      <p class="text-secondary mb-0">Inscripción y administración de participantes</p>
+    </div>
+    <button class="btn btn-primary btn-lg d-flex align-items-center gap-2 fs-6 fw-semibold"
+      @onclick="ShowAddRegistrationModal">
+      <span class="material-symbols-outlined fs-5">add</span>
+      Agregar Inscripción
+    </button>
+
+    <AddRegistrationModal @ref="addRegistrationModal" OnSave="HandleSaveAddRegistration" />
+  </div>
+
+  @* Stats Cards *@
+  <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+    <div class="col">
+      <StatsCard Title="Dorsales Asignados" Value="@assignedCount.ToString()" Description="dorsales activos"
+        Icon="trophy" IconClass="fs-5" IconColor="text-success" ValueColor="text-success" />
+    </div>
+    <div class="col">
+      <StatsCard Title="Sin Asignar" Value="@unassignedCount.ToString()" Description="pendientes de dorsales" Icon="tag"
+        IconClass="fs-5" IconColor="text-warning" ValueColor="text-warning" />
+    </div>
+    <div class="col">
+      <StatsCard Title="Corredores Totales" Value="@totalCount.ToString()" Description="inscripciones activas"
+        Icon="group" IconClass="fs-5" />
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-header border-bottom-0 pb-0">
+      <!-- HEADER -->
+      <div>
+        <div
+          class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+          <div>
+            <div class="d-flex align-items-center mb-1">
+              <span class="material-symbols-outlined text-secondary fs-5 me-2">person_check</span>
+              <h5 class="mb-0 fw-semibold text-primary fs-6">Gestión de Corredores</h5>
+            </div>
+            <small class="text-secondary">@($"{filteredRegistrations.Count} corredores mostrados")</small>
+          </div>
+          @if (selectedRaceId != null && selectedRaceId != 0 && unassignedCount != 0)
+          {
+            <button class="btn btn-primary btn-lg d-flex align-items-center gap-2 fs-6 fw-semibold"
+              @onclick="AssignAllRaceBibs">
+              <span class="material-symbols-outlined fs-5">tag</span>
+              Asignar Dorsales de Carrera (@(unassignedCount.ToString()))
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- FILTROS -->
+      <div class="pt-3">
+        <div class="d-flex flex-wrap gap-3 justify-content-between">
+          <!-- Buscar -->
+          <div class="flex-grow-1" style="min-width: 220px; max-width: 280px;">
+            <div class="position-relative">
+              <span
+                class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 start-0 translate-middle-y ms-3">
+                search
+              </span>
+              <RadzenTextBox Class="form-control ps-5 placeholder-white" @bind-Value="searchText"
+                Placeholder="Buscar corredor..." Change="ApplyFilters" />
+            </div>
+          </div>
+
+          <!-- Evento -->
+          <div class="flex-grow-1" style="min-width: 220px; max-width: 280px;">
+            <RadzenDropDown Class="form-select" Data="@events" @bind-Value="selectedEvent"
+              Placeholder="Todos los eventos" Change="ApplyFilters" />
+          </div>
+
+          <!-- Carrera -->
+          <div class="flex-grow-1" style="min-width: 220px; max-width: 280px;">
+            <RadzenDropDown Class="form-select" Data="@raceMap" TextProperty="Value" ValueProperty="Key"
+              @bind-Value="selectedRaceId" Placeholder="Todas las carreras" Change="ApplyFilters" />
+          </div>
+
+          <!-- Estado -->
+          <div class="flex-grow-1" style="min-width: 220px; max-width: 280px;">
+            <RadzenDropDown Class="form-select" Data="@status" @bind-Value="selectedStatus"
+              Placeholder="Todos los estados" Change="ApplyFilters" />
+          </div>
+
+          <!-- Botón limpiar -->
+          <div>
+            <RadzenButton Class="btn btn-outline-secondary" Icon="refresh" Click="ClearFilters"
+              Title="Restablecer Filtros" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Tabla -->
+    <div class="card-body d-flex flex-wrap">
+      <RadzenDataGrid @ref="registrationsGrid" Data="@filteredRegistrations" TItem="RegistrationDTO" AllowPaging="true"
+        PageSize="5" AllowSorting="true" ShowPagingSummary="true" Class="custom-data-grid-scroll">
+        <Columns>
+          <RadzenDataGridColumn Title="Corredor" Width="220px">
+            <Template Context="r">
+              <div class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined text-secondary fs-2 m-1">account_circle</span>
+                <div>
+                  <div class="fw-semibold">@GetParticipantName(r.ParticipantId)</div>
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined text-secondary fs-6">mail</span>
+                    <small class="text-secondary">@GetParticipantEmail(r.ParticipantId)</small>
+                  </div>
+                </div>
+              </div>
+            </Template>
+          </RadzenDataGridColumn>
+
+          <RadzenDataGridColumn Title="Evento" Width="180px">
+            <Template Context="r">
+              <div class="d-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-5 me-1">calendar_today</span>
+                <span class="fw-semibold">@r.EventName</span>
+              </div>
+            </Template>
+          </RadzenDataGridColumn>
+
+          <RadzenDataGridColumn Title="Carrera" Width="140px">
+            <Template Context="r">
+              <div class="d-flex align-items-center gap-1">
+                <span class="material-symbols-outlined fs-5 me-1">emoji_events</span>
+                <span class="fw-semibold">@r.RaceName</span>
+              </div>
+            </Template>
+          </RadzenDataGridColumn>
+
+          <RadzenDataGridColumn Title="Dorsal" Width="120px">
+            <Template Context="r">
+              @if (r.BibNumber == null)
+              {
+                <RadzenBadge Class="badge kit-badge kit-badge-pending">
+                  <span class="material-symbols-outlined fs-6 me-1">tag</span>
+                  <p class="small m-0">Sin asignar</p>
+                </RadzenBadge>
+              }
+              else
+              @*if (r.Status == "assigned")*@
+              {
+                <RadzenBadge Class="badge kit-badge kit-badge-delivered">
+                  <span class="material-symbols-outlined fs-6 me-1">task_alt</span>
+                  <p class="small m-0">#@r.BibNumber</p>
+                </RadzenBadge>
+              }
+            </Template>
+          </RadzenDataGridColumn>
+
+          <RadzenDataGridColumn Title="Kit" Width="140px">
+            <Template Context="r">
+              @if (r.BibNumber == null)
+              {
+                <RadzenBadge Class="badge kit-badge kit-badge-pending">
+                  <span class="material-symbols-outlined fs-6 me-1">deployed_code</span>
+                  <p class="small m-0">Pendiente</p>
+                </RadzenBadge>
+              }
+              else
+              @*if (r.Status == "assigned")*@
+              {
+                <RadzenBadge Class="badge kit-badge kit-badge-delivered">
+                  <span class="material-symbols-outlined fs-6 me-1">deployed_code</span>
+                  <p class="small m-0">Entregado</p>
+                </RadzenBadge>
+              }
+            </Template>
+          </RadzenDataGridColumn>
+
+          <RadzenDataGridColumn Title="Acciones" Width="150px">
+            <Template Context="r">
+              @if (r.BibNumber == null)
+              {
+                <RadzenButton Disabled="@isProcessing" Class="btn-size btn-success"
+                  Click="@(async () => await AssignBibNumber(r))">
+                  <span class="material-symbols-outlined fs-6 me-1">person_off</span>
+                  <p class="small m-0">Asignar</p>
+                </RadzenButton>
+              }
+              else
+              @*if (r.Status == "assigned")*@
+              {
+                <RadzenButton Disabled="@isProcessing" Class="btn-size btn-error"
+                  Click="@(async () => await RemoveBibNumber(r))">
+                  <span class="material-symbols-outlined fs-6 me-1">person_cancel</span>
+                  <p class="small m-0">Retirar</p>
+                </RadzenButton>
+              }
+            </Template>
+          </RadzenDataGridColumn>
+        </Columns>
+
+        <EmptyTemplate>
+          <div class="d-flex flex-column justify-content-center align-items-center py-5 text-center w-100">
+            <span class="material-symbols-outlined text-secondary fs-1 mb-2">person_off</span>
+            <h6 class="fw-semibold text-secondary mb-1">No hay corredores</h6>
+            <p class="small mb-0">
+              No se encontraron corredores con los filtros seleccionados
+            </p>
+          </div>
+        </EmptyTemplate>
+      </RadzenDataGrid>
+    </div>
+  </div>
+</div>
+
+@code {
+  private AddRegistrationModal? addRegistrationModal;
+  private List<ParticipantDTO> participants = new();
+  private List<RegistrationDTO> registrations = new();
+  private List<RegistrationDTO> filteredRegistrations = new();
+
+  private int assignedCount = 0;
+  private int unassignedCount = 0;
+  private int totalCount = 0;
+
+  private string? searchText;
+  private string? selectedEvent;
+  private string? selectedStatus;
+  private bool isProcessing = false;
+
+  private Dictionary<int, string> raceMap = new();
+  private int? selectedRaceId;
+
+  private List<string> events = new();
+  private List<string> races = new();
+
+
+  private List<string> status = new() { "Todos los estados", "Asignados", "Sin Asignar" };
+  private RadzenDataGrid<RegistrationDTO>? registrationsGrid;
+
+  protected override async Task OnInitializedAsync()
+  {
+    participants = (await ParticipantRepository.GetAllParticipantsDTOAsync()).ToList();
+    registrations = participants.SelectMany(p => p.Registrations!).ToList();
+
+    raceMap = registrations
+    .Where(r => r.RaceId != 0)
+    .GroupBy(r => r.RaceId)
+    .ToDictionary(g => g.Key, g => g.First().RaceName ?? "");
+
+    raceMap = raceMap.Prepend(new KeyValuePair<int, string>(0, "Todas las carreras"))
+    .ToDictionary(x => x.Key, x => x.Value);
+
+    selectedRaceId = 0;
+
+    events = new List<string> { "Todos los eventos" }
+    .Concat(registrations.Select(r => r.EventName ?? "").Distinct().OrderBy(x => x))
+    .ToList();
+
+    selectedEvent = events.First();
+    selectedStatus = status.First();
+
+    filteredRegistrations = registrations;
+    UpdateStats();
+  }
+
+  private void UpdateStats()
+  {
+    assignedCount = filteredRegistrations.Count(r => r.BibNumber != null);
+    unassignedCount = filteredRegistrations.Count(r => r.BibNumber == null);
+    totalCount = filteredRegistrations.Count;
+  }
+
+  private void ShowAddRegistrationModal()
+  {
+    addRegistrationModal?.Show();
+  }
+
+  private async Task HandleSaveAddRegistration(Registration newRegistration)
+  {
+    await RegistrationRepository.AddRegistrationAsync(newRegistration);
+    participants = (await ParticipantRepository.GetAllParticipantsDTOAsync()).ToList();
+  }
+
+  private void ApplyFilters(object? _)
+  {
+    filteredRegistrations = registrations
+    .Where(r =>
+    (string.IsNullOrEmpty(searchText) ||
+    GetParticipantName(r.ParticipantId).Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+    GetParticipantEmail(r.ParticipantId).Contains(searchText, StringComparison.OrdinalIgnoreCase)) &&
+    (selectedEvent == "Todos los eventos" || r.EventName == selectedEvent) &&
+    (selectedRaceId == 0 || r.RaceId == selectedRaceId) &&
+    (selectedStatus == "Todos los estados" ||
+    (selectedStatus == "Asignados" && r.BibNumber != null) ||
+    (selectedStatus == "Sin Asignar" && r.BibNumber == null))
+    )
+    .ToList();
+
+    UpdateStats();
+  }
+
+  private void ClearFilters()
+  {
+    searchText = null;
+    selectedEvent = events.First();
+    selectedRaceId = 0;
+    selectedStatus = status.First();
+    filteredRegistrations = registrations;
+    UpdateStats();
+  }
+
+  private string GetParticipantName(int participantId)
+  {
+    var p = participants.FirstOrDefault(x => x.ParticipantId == participantId);
+    return p != null ? $"{p.FirstName} {p.LastName}" : "—";
+  }
+
+  private string GetParticipantEmail(int participantId)
+  {
+    var p = participants.FirstOrDefault(x => x.ParticipantId == participantId);
+    return p?.Email ?? "";
+  }
+
+  private async Task AssignAllRaceBibs()
+  {
+    if (selectedRaceId == null || selectedRaceId == 0)
+    {
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Warning,
+        Summary = "Selecciona una carrera",
+        Detail = "Debes elegir una carrera antes de asignar dorsales."
+      });
+      return;
+    }
+
+    var raceName = raceMap[selectedRaceId!.Value];
+    bool success = false;
+
+    try
+    {
+      success = await RegistrationRepository.AssignAllRaceBibsAsync(selectedRaceId.Value);
+
+      if (success)
+      {
+        participants = (await ParticipantRepository.GetAllParticipantsDTOAsync()).ToList();
+        registrations = participants.SelectMany(p => p.Registrations!).ToList();
+
+        ApplyFilters(null);
+        UpdateStats();
+
+        await registrationsGrid!.Reload();
+        StateHasChanged();
+
+        NotificationService.Notify(new NotificationMessage
+        {
+          Severity = NotificationSeverity.Info,
+          Summary = "Asignar dorsales",
+          Detail = $"Se asignaron correctamente todos los dorsales de la carrera {raceName}.",
+          Duration = 8000,
+          Style = "position: fixed; bottom: 20px; right: 20px;"
+        });
+      }
+      else
+      {
+        NotificationService.Notify(new NotificationMessage
+        {
+          Severity = NotificationSeverity.Info,
+          Summary = "Sin cambios",
+          Detail = "No había dorsales pendientes de asignar."
+        });
+      }
+    }
+    catch (Exception ex)
+    {
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Error,
+        Summary = "Error",
+        Detail = $"Ocurrió un error al asignar los dorsales: {ex.Message}"
+      });
+    }
+  }
+
+  private async Task AssignBibNumber(RegistrationDTO registration)
+  {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try
+    {
+      await RegistrationRepository.AssignBibNumberAsync(registration.RegistrationId);
+
+      var updated = registrations.FirstOrDefault(r => r.RegistrationId == registration.RegistrationId);
+      if (updated != null)
+        updated.BibNumber = await RegistrationRepository.GetBibNumberAsync(registration.RegistrationId);
+
+      ApplyFilters(null);
+      await registrationsGrid!.Reload();
+
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Success,
+        Summary = "Dorsal asignado",
+        Detail = $"Se asignó correctamente el dorsal al corredor {GetParticipantName(registration.ParticipantId)}.",
+        Duration = 4000,
+        Style = "position: fixed; bottom: 20px; right: 20px;"
+      });
+    }
+    catch (Exception ex)
+    {
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Error,
+        Summary = "Error",
+        Detail = "Ocurrió un error al asignar el dorsal.",
+        Duration = 4000,
+        Style = "position: fixed; bottom: 20px; right: 20px;"
+      });
+      throw new Exception("Error al asignar dorsal: ", ex);
+    }
+    finally
+    {
+      isProcessing = false;
+    }
+  }
+
+  private async Task RemoveBibNumber(RegistrationDTO registration)
+  {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try
+    {
+      await RegistrationRepository.RemoveBibNumberAsync(registration.RegistrationId);
+
+      // Actualizamos los datos locales
+      var updated = registrations.FirstOrDefault(r => r.RegistrationId == registration.RegistrationId);
+      if (updated != null)
+        updated.BibNumber = null;
+
+      // Reaplicamos los filtros creando una nueva lista
+      ApplyFilters(null);
+      filteredRegistrations = new List<RegistrationDTO>(filteredRegistrations);
+
+      // Forzamos renderizado manual del grid y del componente
+      await registrationsGrid!.Reload();
+      StateHasChanged();
+
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Warning,
+        Summary = "Dorsal retirado",
+        Detail = $"Se retiró el dorsal del corredor {GetParticipantName(registration.ParticipantId)}.",
+        Duration = 4000,
+        Style = "position: fixed; bottom: 20px; right: 20px;"
+      });
+    }
+    catch (Exception ex)
+    {
+      NotificationService.Notify(new NotificationMessage
+      {
+        Severity = NotificationSeverity.Error,
+        Summary = "Error",
+        Detail = "Ocurrió un error al retirar el dorsal.",
+        Duration = 4000,
+        Style = "position: fixed; bottom: 20px; right: 20px;"
+      });
+      throw new Exception("Error al retirar dorsal: ", ex);
+    }
+    finally
+    {
+      isProcessing = false;
+    }
+  }
+
+}

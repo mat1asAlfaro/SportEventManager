@@ -37,8 +37,8 @@
       </div>
       <button class="btn btn-primary btn-lg d-flex align-items-center gap-2 fs-6 fw-semibold"
         @onclick="ShowAddEventModal">
-        <span class="material-symbols-outlined">add</span>
-        Crear Nuevo Evento
+        <span class="material-symbols-outlined fs-5">add</span>
+        Agregar Evento
       </button>
 
       <AddEventModal @ref="addEventModal" OnSave="HandleSaveAddEvent" />
@@ -61,7 +61,7 @@
               <h6 class="fw-semibold mb-2">Buscar</h6>
               <div class="position-relative">
                 <span
-                  class="material-symbols-outlined text-secondary position-absolute top-50 translate-middle-y ms-3">search</span>
+                  class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 translate-middle-y ms-3">search</span>
                 <input type="text" class="form-control ps-5 placeholder-white" placeholder="Nombre o ubicación..."
                   value="@searchText" @oninput="OnSearchTextChanged" />
               </div>
@@ -103,11 +103,11 @@
       </div>
       <div class="col">
         <StatsCard Title="Total Carreras" Value="@(totalCountRaces.ToString() ?? "0")"
-          Description="carreras disponibles" Icon="trophy" IconStyle="Outlined" IconClass="fs-5" />
+          Description="carreras disponibles" Icon="trophy" IconClass="fs-5" />
       </div>
       <div class="col">
         <StatsCard Title="Corredores Totales" Value="@(totalCountParticipants.ToString() ?? "0")"
-          Description="inscripciones activas" Icon="group" IconStyle="Outlined" IconClass="fs-5" />
+          Description="inscripciones activas" Icon="group" IconClass="fs-5" />
       </div>
     </div>
 
@@ -325,6 +325,8 @@
 
     if (race != null)
       editRaceModal?.Show(race.RaceId);
+
+    StateHasChanged();
   }
 
   private async Task HandleSaveEditRace(Race updatedRace)
@@ -345,7 +347,7 @@
 
     var ev = events.FirstOrDefault(e => e.EventId == data.EventId);
     var race = ev?.Races.FirstOrDefault(r => r.RaceId == data.RaceId);
-    selectedRaceName = race?.Name ?? string.Empty;
+    selectedRaceName = race?.RaceName ?? string.Empty;
 
     deleteRaceModal?.Show(selectedRaceId, selectedRaceName);
   }

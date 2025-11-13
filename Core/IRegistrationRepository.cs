@@ -17,5 +17,10 @@ namespace SportEventManager.Core
         Task<bool> ExistsByParticipantAndEventAsync(int participantId, int eventId);
         Task<bool> ExistsByParticipantAndRaceAsync(int participantId, int raceId);
         Task<Registration?> GetParticipantRegistrationInEventAsync(int participantId, int eventId);
+        Task<bool> AssignAllRaceBibsAsync(int raceId);
+        Task<bool> AssignBibNumberAsync(int registrationId);
+        Task<bool> RemoveBibNumberAsync(int registrationId);
+        Task<int?> GetBibNumberAsync(int registrationId);
+        Task<IEnumerable<Registration>> GetByRaceIdAsync(int raceId);
     }
 }

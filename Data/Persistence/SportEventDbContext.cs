@@ -169,16 +169,16 @@ namespace SportEventManager.Data.Persistence
 
             // Participants con nuevos campos requeridos
             modelBuilder.Entity<Participant>().HasData(
-                new Participant { ParticipantId = 1, FirstName = "Matias", LastName = "Alfaro", Email = "matias@test.com", DocumentNumber = "12345678", DateOfBirth = new DateTime(1990, 5, 12), Gender = "Masculino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 2, FirstName = "Ana", LastName = "Gomez", Email = "ana@test.com", DocumentNumber = "87654321", DateOfBirth = new DateTime(1992, 7, 23), Gender = "Femenino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 3, FirstName = "Lucas", LastName = "Perez", Email = "lucas@test.com", DocumentNumber = "11223344", DateOfBirth = new DateTime(1988, 1, 3), Gender = "Masculino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 4, FirstName = "Sofia", LastName = "Martinez", Email = "sofia@test.com", DocumentNumber = "44332211", DateOfBirth = new DateTime(1995, 9, 18), Gender = "Femenino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 5, FirstName = "Juan", LastName = "Diaz", Email = "juan@test.com", DocumentNumber = "55667788", DateOfBirth = new DateTime(1985, 12, 30), Gender = "Masculino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 6, FirstName = "Lucia", LastName = "Fernandez", Email = "lucia@test.com", DocumentNumber = "99887766", DateOfBirth = new DateTime(1994, 3, 14), Gender = "Femenino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 7, FirstName = "Carlos", LastName = "Rojas", Email = "carlos@test.com", DocumentNumber = "66778899", DateOfBirth = new DateTime(1989, 8, 9), Gender = "Masculino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 8, FirstName = "Laura", LastName = "Vazquez", Email = "laura@test.com", DocumentNumber = "77889900", DateOfBirth = new DateTime(1993, 11, 5), Gender = "Femenino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 9, FirstName = "Pedro", LastName = "Torres", Email = "pedro@test.com", DocumentNumber = "33445566", DateOfBirth = new DateTime(1987, 6, 27), Gender = "Masculino", CreatedAt = new DateTime(2025, 10, 15) },
-                new Participant { ParticipantId = 10, FirstName = "Mariana", LastName = "Suarez", Email = "mariana@test.com", DocumentNumber = "22334455", DateOfBirth = new DateTime(1991, 2, 2), Gender = "Femenino", CreatedAt = new DateTime(2025, 10, 15) }
+                new Participant { ParticipantId = 1, FirstName = "Matias", LastName = "Alfaro", Email = "matias@test.com", DocumentNumber = "12345678", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 2, FirstName = "Ana", LastName = "Gomez", Email = "ana@test.com", DocumentNumber = "87654321", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 3, FirstName = "Lucas", LastName = "Perez", Email = "lucas@test.com", DocumentNumber = "11223344", Birthdate = new DateTime(2012, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 4, FirstName = "Sofia", LastName = "Martinez", Email = "sofia@test.com", DocumentNumber = "44332211", Birthdate = new DateTime(2008, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 5, FirstName = "Juan", LastName = "Diaz", Email = "juan@test.com", DocumentNumber = "55667788", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 6, FirstName = "Lucia", LastName = "Fernandez", Email = "lucia@test.com", DocumentNumber = "99887766", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 7, FirstName = "Carlos", LastName = "Rojas", Email = "carlos@test.com", DocumentNumber = "66778899", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 8, FirstName = "Laura", LastName = "Vazquez", Email = "laura@test.com", DocumentNumber = "77889900", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 9, FirstName = "Pedro", LastName = "Torres", Email = "pedro@test.com", DocumentNumber = "33445566", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
+                new Participant { ParticipantId = 10, FirstName = "Mariana", LastName = "Suarez", Email = "mariana@test.com", DocumentNumber = "22334455", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) }
             );
 
             modelBuilder.Entity<Registration>().HasData(
