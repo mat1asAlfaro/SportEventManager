@@ -33,7 +33,7 @@
           <div class="mb-3">
             <label class="form-label small fw-semibold">Documento</label>
             <input class="form-control" maxlength="8" placeholder="12345678" inputmode="numeric" @bind="EditableParticipant.DocumentNumber" @bind:after="OnDocumentChanged" required disabled="@(IsExistingParticipant || IsFormLocked)" />
-            <div class="form-text text-secondary">Ingresa tu número de documento y verificaremos si tus datos ya fueron cargados.</div>
+            <div class="form-text text-secondary">Ingresa tu nÃºmero de documento y verificaremos si tus datos ya fueron cargados.</div>
           </div>
 
           <div class="row g-3">
@@ -43,7 +43,7 @@
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold">Apellido</label>
-              <input class="form-control" placeholder="Ej: Pérez" @bind="EditableParticipant.LastName" required disabled="@IsFormLocked" />
+              <input class="form-control" placeholder="Ej: PÃ©rez" @bind="EditableParticipant.LastName" required disabled="@IsFormLocked" />
             </div>
           </div>
 
@@ -54,12 +54,12 @@
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label small fw-semibold">Fecha de nacimiento</label>
-              <input type="date" class="form-control" placeholder="dd/mm/aaaa" min="@MinBirthDate" max="@MaxBirthDate" @bind="EditableParticipant.DateOfBirth" required disabled="@IsFormLocked" />
+              <input type="date" class="form-control" placeholder="dd/mm/aaaa" min="@MinBirthDate" max="@MaxBirthDate" @bind="EditableParticipant.Birthdate" required disabled="@IsFormLocked" />
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Género</label>
+            <label class="form-label small fw-semibold">GÃ©nero</label>
             <div class="select-wrapper">
               <select class="form-select" @bind="EditableParticipant.Gender" required disabled="@IsFormLocked">
                 <option value="">Selecciona</option>
@@ -76,7 +76,7 @@
             <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
           </button>
           <button type="submit" class="btn btn-primary fw-semibold" disabled="@(IsSaving || IsSearching || IsFormLocked)">
-            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ? "Buscando..." : "Confirmar inscripción"))
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ? "Buscando..." : "Confirmar inscripciÃ³n"))
           </button>
         </div>
       </EditForm>
@@ -107,7 +107,7 @@
   // Serializador de acceso al repositorio para evitar operaciones concurrentes en el mismo DbContext
   private readonly System.Threading.SemaphoreSlim _repoLock = new(1, 1);
 
-  // Límites de fecha de nacimiento: mínimo = hoy - 95 años, máximo = hoy
+  // LÃ­mites de fecha de nacimiento: mÃ­nimo = hoy - 95 aÃ±os, mÃ¡ximo = hoy
   private string MinBirthDate => DateTime.Today.AddYears(-95).ToString("yyyy-MM-dd");
   private string MaxBirthDate => DateTime.Today.ToString("yyyy-MM-dd");
 
@@ -127,12 +127,12 @@
     IsFormLocked = false;
     EditableParticipant = new Participant();
 
-    // Fecha por defecto: mínimo permitido (hoy - 95 años)
+    // Fecha por defecto: mÃ­nimo permitido (hoy - 95 aÃ±os)
     EditableParticipant.DateOfBirth = DateTime.Today.AddYears(-95);
 
     if (!RaceCategories.Any())
     {
-      ErrorMessage = "La carrera no tiene categorías configuradas. No es posible completar la inscripción.";
+      ErrorMessage = "La carrera no tiene categorÃ­as configuradas. No es posible completar la inscripciÃ³n.";
       IsFormLocked = true;
     }
 
@@ -193,7 +193,7 @@
 
     if (!RaceCategories.Any())
     {
-      ErrorMessage = "La carrera no tiene categorías configuradas.";
+      ErrorMessage = "La carrera no tiene categorÃ­as configuradas.";
       IsFormLocked = true;
       return;
     }
@@ -206,7 +206,7 @@
 
     if (string.IsNullOrWhiteSpace(EditableParticipant.Gender) || (EditableParticipant.Gender != "Masculino" && EditableParticipant.Gender != "Femenino"))
     {
-      ErrorMessage = "Selecciona un género válido.";
+      ErrorMessage = "Selecciona un gÃ©nero vÃ¡lido.";
       return;
     }
 
@@ -223,13 +223,13 @@
         var doc = EditableParticipant.DocumentNumber!.Trim();
         var byDoc = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
 
-        // Validaciones de existencia/duplicados (sin persistir todavía)
+        // Validaciones de existencia/duplicados (sin persistir todavÃ­a)
         if (byDoc != null)
         {
           // 1) Ya inscripto en la misma carrera
           if (await RegistrationRepository.ExistsByParticipantAndRaceAsync(byDoc.ParticipantId, RaceId))
           {
-            ErrorMessage = "El participante ya está inscripto en esta carrera.";
+            ErrorMessage = "El participante ya estÃ¡ inscripto en esta carrera.";
             IsSaving = false;
             return; // bloquear alta
           }
@@ -238,24 +238,24 @@
           var existingInEvent = await RegistrationRepository.GetParticipantRegistrationInEventAsync(byDoc.ParticipantId, EventId);
           if (existingInEvent != null)
           {
-            InfoMessage = $"Este participante ya está inscripto en la carrera '{existingInEvent.Race?.Name}' de este evento.";
+            InfoMessage = $"Este participante ya estÃ¡ inscripto en la carrera '{existingInEvent.Race?.Name}' de este evento.";
             ErrorMessage = "No es posible inscribirse a dos carreras del mismo evento.";
             IsSaving = false;
             return; // bloquear alta
           }
         }
 
-        // Determinar categoría válida por edad y género (con datos del formulario)
+        // Determinar categorÃ­a vÃ¡lida por edad y gÃ©nero (con datos del formulario)
         var age = CalculateAge(EditableParticipant.DateOfBirth);
         var categoryId = SelectEligibleCategoryId(age, EditableParticipant.Gender!);
         if (categoryId is null)
         {
-          ErrorMessage = "No es posible inscribirte a esta carrera porque no es de tu categoría.";
+          ErrorMessage = "No es posible inscribirte a esta carrera porque no es de tu categorÃ­a.";
           IsSaving = false;
           return;
         }
 
-        // Persistir participante (update o insert) sólo si pasó la validación de categoría
+        // Persistir participante (update o insert) sÃ³lo si pasÃ³ la validaciÃ³n de categorÃ­a
         if (byDoc != null)
         {
           byDoc.FirstName = EditableParticipant.FirstName;
@@ -273,7 +273,7 @@
           await ParticipantRepository.AddParticipantAsync(EditableParticipant);
         }
 
-        // Crear inscripción
+        // Crear inscripciÃ³n
         var registration = new Registration
         {
           ParticipantId = EditableParticipant.ParticipantId,
@@ -317,13 +317,13 @@
     if (RaceCategories == null || RaceCategories.Count == 0)
       return null;
 
-    // Mapear género del participante a símbolo de categoría
+    // Mapear gÃ©nero del participante a sÃ­mbolo de categorÃ­a
     string genderSymbol = participantGender == "Masculino" ? "M" : participantGender == "Femenino" ? "F" : string.Empty;
 
     var candidates = RaceCategories
       .Where(rc => rc.Category != null)
       .Where(rc =>
-        // Género compatible: mismo símbolo o categoría mixta "X"
+        // GÃ©nero compatible: mismo sÃ­mbolo o categorÃ­a mixta "X"
         (rc.Category!.Gender == genderSymbol || rc.Category!.Gender == "X")
         && (!rc.Category!.MinAge.HasValue || age >= rc.Category!.MinAge.Value)
         && (!rc.Category!.MaxAge.HasValue || age <= rc.Category!.MaxAge.Value)
@@ -333,7 +333,7 @@
     if (!candidates.Any())
       return null;
 
-    // Preferir categorías específicas de género (M/F) sobre mixtas (X)
+    // Preferir categorÃ­as especÃ­ficas de gÃ©nero (M/F) sobre mixtas (X)
     var preferred = candidates.FirstOrDefault(c => c.Category!.Gender != "X") ?? candidates.First();
     return preferred.CategoryId;
   }
