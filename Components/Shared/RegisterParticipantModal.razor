@@ -297,10 +297,21 @@
         _repoLock.Release();
       }
     }
-    catch (Exception ex)
+    catch (InvalidOperationException ex)
     {
       IsSaving = false;
       ErrorMessage = ex.Message;
+    }
+    catch (ArgumentException ex)
+    {
+      IsSaving = false;
+      ErrorMessage = ex.Message;
+    }
+    catch (Exception ex)
+    {
+      IsSaving = false;
+      ErrorMessage = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+      // Optionally log ex here
     }
   }
 
