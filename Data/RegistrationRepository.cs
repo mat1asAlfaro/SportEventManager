@@ -174,8 +174,7 @@ namespace SportEventManager.Data
             return true;
         }
 
-        public async Task<int?> GetBibNumberAsync(int registrationId)
-        {
+        public async Task<int?> GetBibNumberAsync(int registrationId) {
             var registration = await _context.Registrations.FindAsync(registrationId);
             if (registration == null)
                 throw new Exception("Registro no encontrado.");
@@ -184,6 +183,8 @@ namespace SportEventManager.Data
                 throw new Exception("Este participante no tiene dorsal asignado.");
 
             return registration.BibNumber;
+        }
+
         public async Task<IEnumerable<Registration>> GetByRaceIdAsync(int raceId)
         {
             return await _context.Registrations

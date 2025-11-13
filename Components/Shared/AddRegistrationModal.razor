@@ -5,6 +5,7 @@
 @inherits LayoutComponentBase
 @inject IEventRepository EventRepository
 @inject IRaceRepository RaceRepository
+@inject IParticipantRepository ParticipantRepository
 
 <div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-dialog-limit">
@@ -49,7 +50,7 @@
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Fecha de Cumpleaños</label>
-            <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" />
+            <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" Min="@MinBirthDate" Max="@MaxBirthDate" />
             <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
           </div>
 
@@ -125,6 +126,10 @@
 
   [Parameter] public EventCallback<Registration> OnSave { get; set; }
 
+  // Límites y default de fecha de nacimiento
+  private DateTime MinBirthDate => DateTime.Today.AddYears(-95);
+  private DateTime MaxBirthDate => DateTime.Today;
+
   protected override async Task OnInitializedAsync()
   {
     Events = (await EventRepository.GetAllEventsAsync()).ToList();
@@ -149,7 +154,10 @@
 
   public void Show()
   {
-    NewParticipant = new Participant();
+    NewParticipant = new Participant
+    {
+      Birthdate = DateTime.Today.AddYears(-95)
+    };
     NewRegistration = new Registration();
     IsVisible = true;
     StateHasChanged();
@@ -160,10 +168,56 @@
     if (SelectedEventId == null || SelectedRaceId == null)
       return;
 
+    if (string.IsNullOrWhiteSpace(NewParticipant.DocumentNumber))
+      return;
+
+    // Upsert de participante por documento
+    var doc = NewParticipant.DocumentNumber.Trim();
+    var existing = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+    if (existing != null)
+    {
+      existing.FirstName = NewParticipant.FirstName;
+      existing.LastName = NewParticipant.LastName;
+      existing.Email = NewParticipant.Email;
+      existing.Birthdate = NewParticipant.Birthdate;
+      existing.Gender = NewParticipant.Gender;
+      await ParticipantRepository.UpdateParticipantAsync(existing);
+      NewRegistration.ParticipantId = existing.ParticipantId;
+    }
+    else
+    {
+      await ParticipantRepository.AddParticipantAsync(NewParticipant);
+      NewRegistration.ParticipantId = NewParticipant.ParticipantId;
+    }
+
+    // Determinar categoría por edad
+    var age = CalculateAge(NewParticipant.Birthdate);
+    NewRegistration.CategoryId = SelectCategoryIdByAge(age);
+
+    // Asignar carrera y estado
+    NewRegistration.RaceId = SelectedRaceId.Value;
+    NewRegistration.Status = "Pending";
+
     if (OnSave.HasDelegate)
       await OnSave.InvokeAsync(NewRegistration);
 
     IsVisible = false;
+  }
+
+  private static int CalculateAge(DateTime dob)
+  {
+    var today = DateTime.Today;
+    var age = today.Year - dob.Year;
+    if (dob.Date > today.AddYears(-age)) age--;
+    return age;
+  }
+
+  // Regla simple basada en seeds: <=11 -> Infantiles (5); 12-17 -> Juveniles (4); 18+ -> Mixtos Mayores (3)
+  private static int SelectCategoryIdByAge(int age)
+  {
+    if (age <= 11) return 5;
+    if (age <= 17) return 4;
+    return 3;
   }
 
   private void Close()

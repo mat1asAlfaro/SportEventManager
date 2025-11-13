@@ -272,9 +272,6 @@ namespace SportEventManager.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("DocumentNumber")
                         .IsRequired()
                         .HasMaxLength(8)
@@ -291,7 +288,6 @@ namespace SportEventManager.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("Gender")
-                        .IsRequired()
                         .HasColumnType("int");
 
                     b.Property<string>("LastName")
@@ -314,7 +310,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 1,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1990, 5, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "12345678",
                             Email = "matias@test.com",
                             FirstName = "Matias",
@@ -326,7 +321,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 2,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1992, 7, 23, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "87654321",
                             Email = "ana@test.com",
                             FirstName = "Ana",
@@ -338,7 +332,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 3,
                             Birthdate = new DateTime(2012, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1988, 1, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "11223344",
                             Email = "lucas@test.com",
                             FirstName = "Lucas",
@@ -350,7 +343,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 4,
                             Birthdate = new DateTime(2008, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1995, 9, 18, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "44332211",
                             Email = "sofia@test.com",
                             FirstName = "Sofia",
@@ -362,7 +354,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 5,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1985, 12, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "55667788",
                             Email = "juan@test.com",
                             FirstName = "Juan",
@@ -374,7 +365,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 6,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1994, 3, 14, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "99887766",
                             Email = "lucia@test.com",
                             FirstName = "Lucia",
@@ -386,7 +376,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 7,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1989, 8, 9, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "66778899",
                             Email = "carlos@test.com",
                             FirstName = "Carlos",
@@ -398,7 +387,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 8,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1993, 11, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "77889900",
                             Email = "laura@test.com",
                             FirstName = "Laura",
@@ -410,7 +398,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 9,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1987, 6, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "33445566",
                             Email = "pedro@test.com",
                             FirstName = "Pedro",
@@ -422,7 +409,6 @@ namespace SportEventManager.Migrations
                             ParticipantId = 10,
                             Birthdate = new DateTime(1980, 7, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfBirth = new DateTime(1991, 2, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DocumentNumber = "22334455",
                             Email = "mariana@test.com",
                             FirstName = "Mariana",

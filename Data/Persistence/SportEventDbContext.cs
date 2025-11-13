@@ -167,7 +167,6 @@ namespace SportEventManager.Data.Persistence
                 new RaceCategory { RaceId = 9, CategoryId = 5 }
             );
 
-            // Participants con nuevos campos requeridos
             modelBuilder.Entity<Participant>().HasData(
                 new Participant { ParticipantId = 1, FirstName = "Matias", LastName = "Alfaro", Email = "matias@test.com", DocumentNumber = "12345678", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Male, CreatedAt = new DateTime(2025, 10, 15) },
                 new Participant { ParticipantId = 2, FirstName = "Ana", LastName = "Gomez", Email = "ana@test.com", DocumentNumber = "87654321", Birthdate = new DateTime(1980, 07, 11), Gender = Gender.Female, CreatedAt = new DateTime(2025, 10, 15) },
