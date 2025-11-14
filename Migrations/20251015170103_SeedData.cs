@@ -127,17 +127,6 @@ namespace SportEventManager.Migrations
                     { 9, new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), 9, 9 },
                     { 10, new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), 10, 10 }
                 });
-
-            migrationBuilder.InsertData(
-                table: "TimeRecords",
-                columns: new[] { "TimeRecordId", "ChipId", "RaceId", "SplitId", "Timestamp" },
-                values: new object[,]
-                {
-                    { 1, 1, 1, 1, new DateTime(2025, 10, 15, 8, 5, 0, 0, DateTimeKind.Unspecified) },
-                    { 2, 2, 1, 2, new DateTime(2025, 10, 15, 8, 10, 0, 0, DateTimeKind.Unspecified) },
-                    { 3, 3, 2, 3, new DateTime(2025, 10, 15, 8, 15, 0, 0, DateTimeKind.Unspecified) },
-                    { 4, 4, 2, 4, new DateTime(2025, 10, 15, 8, 20, 0, 0, DateTimeKind.Unspecified) }
-                });
         }
 
         /// <inheritdoc />
