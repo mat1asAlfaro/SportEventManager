@@ -15,43 +15,48 @@
         <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
       </div>
 
-      <div class="modal-body">
-        <EditForm Model="@NewParticipant" OnValidSubmit="@HandleValidSubmit">
-          <DataAnnotationsValidator />
-          <ValidationSummary />
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Nombre</label>
-            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su nombre"
-              @bind-Value="NewParticipant.FirstName" />
-            <ValidationMessage For="@(() => NewParticipant.FirstName)" />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Apellido</label>
-            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su apellido"
-              @bind-Value="NewParticipant.LastName" />
-            <ValidationMessage For="@(() => NewParticipant.LastName)" />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Email</label>
-            <InputText type="text" class="form-control placeholder-white" placeholder="Ingrese su email"
-              @bind-Value="NewParticipant.Email" />
-            <ValidationMessage For="@(() => NewParticipant.Email)" />
-          </div>
-
+      <EditForm Model="@NewParticipant" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="modal-body">
           <div class="mb-3">
             <label class="form-label fw-semibold">Documento de Identidad</label>
-            <InputText type="text" class="form-control placeholder-white"
-              placeholder="Ingrese su documento de identidad" @bind-Value="NewParticipant.DocumentNumber" />
+            <InputText type="text" class="form-control placeholder-white" placeholder="12345678"
+              @bind-Value="NewParticipant.DocumentNumber" />
             <ValidationMessage For="@(() => NewParticipant.DocumentNumber)" />
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Fecha de Cumpleaños</label>
-            <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" Min="@MinBirthDate" Max="@MaxBirthDate" />
-            <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold">Nombre</label>
+              <InputText type="numeric" class="form-control placeholder-white" placeholder="Ej: Juan"
+                @bind-Value="NewParticipant.FirstName" />
+              <ValidationMessage For="@(() => NewParticipant.FirstName)" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold">Apellido</label>
+              <InputText type="text" class="form-control placeholder-white" placeholder="Ej: Pérez"
+                @bind-Value="NewParticipant.LastName" />
+              <ValidationMessage For="@(() => NewParticipant.LastName)" />
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <InputText type="email" class="form-control placeholder-white" placeholder="nombre@correo.com"
+                @bind-Value="NewParticipant.Email" />
+              <ValidationMessage For="@(() => NewParticipant.Email)" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold">Fecha de Nacimiento</label>
+              <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" Min="@MinBirthDate"
+                Max="@MaxBirthDate" />
+              <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
+            </div>
           </div>
 
           <div class="mb-3">
@@ -109,8 +114,9 @@
               <span class="material-symbols-outlined me-2 fs-6">save</span>Guardar Inscripción
             </button>
           </div>
-        </EditForm>
-      </div>
+        </div>
+      </EditForm>
+
     </div>
   </div>
 </div>
