@@ -8,22 +8,41 @@ namespace SportEventManager.Core.Services
     /// </summary>
     public class RaceUpdateService
     {
-        // Evento que se dispara cuando hay una actualización
-        public event Action<RaceUpdateDTO>? OnRaceUpdate;
+        private readonly IServiceProvider _serviceProvider;
+
+        public event Action<int>? OnRaceUpdate;
+
+        public RaceUpdateService(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
 
         /// <summary>
         /// Notifica a todos los suscriptores sobre una actualización de carrera.
         /// </summary>
-        public void NotifyUpdate(int raceId, int bibNumber, double distanceKm)
+        public async Task NotifyUpdate(int splitId)
         {
-            var update = new RaceUpdateDTO(bibNumber, distanceKm) 
-            { 
-                RaceId = raceId,
-                Timestamp = DateTime.UtcNow 
-            };
-            
-            Console.WriteLine($"[RaceUpdateService] Notificando actualización: Race={raceId}, Bib={bibNumber}, Dist={distanceKm}");
-            OnRaceUpdate?.Invoke(update);
+            using var scope = _serviceProvider.CreateScope();
+            var splitRepo = scope.ServiceProvider.GetRequiredService<ISplitRepository>();
+
+            var split = await splitRepo.GetByIdAsync(splitId);
+
+            if (split == null)
+            {
+                Console.WriteLine($"[RaceUpdateService] Split {splitId} no existe");
+                return;
+            }
+
+            if (split.Race == null)
+            {
+                Console.WriteLine($"[RaceUpdateService] Split {splitId} no tiene Race cargada");
+                return;
+            }
+
+            var raceId = split.Race.RaceId;
+
+            Console.WriteLine($"[RaceUpdateService] Notificando actualización Race={raceId}");
+            OnRaceUpdate?.Invoke(raceId);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace SportEventManager.Models
         public Race? Race { get; set; }
         [MaxLength(100)]
         public string? SplitName { get; set; }
-        public double? KmMark { get; set; }
+        public double KmMark { get; set; }
 
         // Relationships
         public ICollection<TimeRecord>? TimeRecord { get; set; }

@@ -24,17 +24,13 @@
 else
 {
   <div class="space-y-2">
-    @foreach (var update in _updates.OrderByDescending(u => u.Timestamp).Take(20))
+    @foreach (var update in _updates)
     {
       <div class="p-3 bg-white border border-gray-200 rounded shadow-sm">
         <div class="flex justify-between items-center">
           <div>
-            <span class="font-bold text-lg">Dorsal #@update.BibNumber</span>
-            <span class="ml-3 text-blue-600">@update.DistanceKm km</span>
+            <span class="font-bold text-lg">Dorsal #@update</span>
           </div>
-          <span class="text-xs text-gray-500">
-            @update.Timestamp.ToLocalTime().ToString("HH:mm:ss")
-          </span>
         </div>
       </div>
     }
@@ -43,7 +39,7 @@ else
 
 @code {
   [Parameter] public int RaceId { get; set; }
-  private readonly List<RaceUpdateDTO> _updates = new();
+  private readonly List<int> _updates = new();
 
   protected override void OnInitialized()
   {
@@ -52,13 +48,13 @@ else
     Console.WriteLine($"[RaceLive] Componente inicializado para carrera {RaceId}");
   }
 
-  private void HandleRaceUpdate(RaceUpdateDTO update)
+  private void HandleRaceUpdate(int updateRaceId)
   {
     // Filtrar solo las actualizaciones de esta carrera
-    if (update.RaceId == RaceId)
+    if (updateRaceId == RaceId)
     {
-      Console.WriteLine($"[RaceLive] Actualización recibida: Dorsal={update.BibNumber}, Distancia={update.DistanceKm}");
-      _updates.Add(update);
+      Console.WriteLine($"[RaceLive] Actualización recibida: Dorsal={updateRaceId}");
+      _updates.Add(updateRaceId);
 
       // Blazor Server actualiza automáticamente el UI a través de su SignalR interno
       InvokeAsync(StateHasChanged);

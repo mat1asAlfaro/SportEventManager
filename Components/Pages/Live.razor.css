@@ -1,0 +1,108 @@
+.container-live {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--color-primary-text);
+}
+
+.card-live {
+  background: var(--color-card-background);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.live-header {
+  background: var(--color-card-background);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  color: var(--color-primary-text);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 992px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .two-col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.split-card {
+  padding: 16px;
+  background: var(--color-card-background);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.title-section {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #7aa2ff;
+}
+
+button:hover {
+  transform: scale(1.01) translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.slow-spinner {
+  animation-duration: 1s !important;
+}
+
+.status-badge-finalized {
+  background-color: color-mix(in srgb, var(--color-error) 20%, transparent);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+
+.status-badge-running {
+  background-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.status-badge-notstarted {
+  background-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+}
+
+.status-badge-default {
+  background-color: #444;
+  color: #ccc;
+  border: 1px solid #666;
+}
+
+.bg-card-split {
+  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+hr {
+  margin: 24px 0 20px 0;
+}
