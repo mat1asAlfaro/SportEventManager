@@ -23,7 +23,7 @@ namespace SportEventManager.DTOs
                 var now = DateTime.Now;
                 var diff = StartDate - now;
 
-                if (StartDate < now) return "Finalizado";
+                if (EndDate < now) return "Finalizado";
                 if (diff.TotalDays <= 30) return "Próximo";
                 return "Confirmado";
             }

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SportEventManager.Core;
 using SportEventManager.Core.Services;
@@ -18,21 +19,21 @@ namespace SportEventManager.Controllers
     }
 
     [HttpPost("start/{raceId}")]
-    public async Task<IActionResult> StartRace(int raceId)
+    public async Task<IActionResult> StartRace(int splitId)
     {
-      await _raceRepository.NotifyRaceStartedAsync(raceId);
-      return Ok($"Carrera {raceId} iniciada");
+      await _raceRepository.NotifyRaceStartedAsync(splitId);
+      return Ok($"Carrera {splitId} iniciada");
     }
 
-    [HttpPost("update/{raceId}/{bibNumber}/{distanceKm}")]
-    public IActionResult UpdateRace(int raceId, int bibNumber, double distanceKm)
+    [HttpPost("update/{splitId}/{bibNumber}/{distanceKm}")]
+    public async Task<IActionResult> UpdateRace(int splitId, int bibNumber, double distanceKm)
     {
-      Console.WriteLine($"[CONTROLLER] Recibida actualización: Race={raceId}, Dorsal={bibNumber}, Distancia={distanceKm}");
-      
+      Console.WriteLine($"[CONTROLLER] Recibida actualización: Race={splitId}");
+
       // Notifica a través del servicio - esto actualiza automáticamente todos los componentes suscritos
-      _raceUpdateService.NotifyUpdate(raceId, bibNumber, distanceKm);
-      
-      return Ok(new { message = "Actualizacion enviada", raceId, bibNumber, distanceKm });
+      await _raceUpdateService.NotifyUpdate(splitId);
+
+      return Ok(new { message = "Actualizacion enviada", splitId });
     }
   }
 }

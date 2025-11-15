@@ -15,7 +15,7 @@ namespace SportEventManager.Core
 
     Task<List<RaceDTO>> GetLiveRacing();
     Task UpdateRaceStatusAsync(int raceId, int bibNumber, double distanceKm);
-    Task NotifyRaceStartedAsync(int raceId);
+    Task NotifyRaceStartedAsync(int splitId);
 
   }
 }

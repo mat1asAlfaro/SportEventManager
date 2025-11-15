@@ -97,6 +97,7 @@ app.MapHub<TimingHub>("/timingHub");
 app.MapPost("/api/timing/register", async (
     ChipReadingDTO reading,
     ITimeRecordRepository timeRecordRepository,
+    RaceUpdateService raceUpdateService,
     ILogger<Program> logger) =>
 {
     try
@@ -115,6 +116,7 @@ app.MapPost("/api/timing/register", async (
             return Results.BadRequest(new { error = "Failed to register time record. Split may not exist or record already exists." });
         }
 
+        await raceUpdateService.NotifyUpdate(reading.SplitId);
         logger.LogInformation($"Successfully registered chip reading: {result.TimeRecordId}");
         return Results.Ok(result);
     }

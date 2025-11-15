@@ -24,10 +24,31 @@ namespace SportEventManager.Data
             return await Task.FromResult(_context.Splits.ToList());
         }
 
-        public async Task<Split?> GetSplitByIdAsync(int splitId)
+        public async Task<SplitDTO?> GetByIdAsync(int splitId)
         {
-            var split = _context.Splits.FirstOrDefault(s => s.SplitId == splitId);
-            return await Task.FromResult(split);
+            var split = await _context.Splits
+                .Include(r => r.Race)
+                .Where(s => s.SplitId == splitId)
+                .FirstOrDefaultAsync();
+
+            if (split == null)
+            {
+                return null;
+            }
+
+            var splitDTO = new SplitDTO
+            {
+                SplitId = split.SplitId,
+                RaceId = split.RaceId,
+                SplitName = split.SplitName,
+                KmMark = split.KmMark,
+                Race = split.Race is null ? null : new RaceDTO
+                {
+                    RaceId = split.Race.RaceId
+                }
+            };
+
+            return splitDTO;
         }
 
         public async Task AddSplitAsync(Split split)
@@ -58,10 +79,6 @@ namespace SportEventManager.Data
             }
         }
 
-        public async Task<Split?> GetByIdAsync(int splitId)
-        {
-            return await GetSplitByIdAsync(splitId);
-        }
         public async Task<IEnumerable<Split>> GetByRaceIdAsync(int raceId)
         {
             return await _context.Splits
