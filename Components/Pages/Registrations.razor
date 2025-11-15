@@ -1,10 +1,15 @@
 ﻿@page "/registrations"
 @rendermode InteractiveServer
 @using SportEventManager.DTOs
+@using Radzen
+@using Radzen.Blazor
 @inject SportEventManager.Core.IEventRepository EventRepository
 @inject NavigationManager Navigation
+@inject NotificationService NotificationService
 
 <PageTitle>Inscripciones</PageTitle>
+
+<RadzenNotification />
 
 <!-- SECCIÓN - Título -->
 <div class="title-section position-relative py-5 text-center">
@@ -95,7 +100,7 @@
             <div class="select-wrapper">
                 <select class="form-select" @bind=SelectedEventId>
                     <option value="0">Selecciona un evento</option>
-                    @foreach (var ev in Events.Where(e => e.Races != null && e.Races.Any()).OrderBy(e => e.StartDate)) {
+                    @foreach (var ev in Events.Where(e => e.Races != null && e.Races.Any() && e.StartDate > DateTime.Now).OrderBy(e => e.StartDate)) {
                         <option value="@ev.EventId">@ev.Name (@ev.StartDate.ToString("dd/MM/yyyy"))</option>
                     }
                 </select>
@@ -128,13 +133,6 @@
             <span class="material-symbols-outlined">arrow_forward</span>
             <span class="fw-semibold">Continuar con la inscripción</span>
         </button>
-
-        @if (!string.IsNullOrWhiteSpace(Feedback))
-        {
-            <div class="alert alert-info mt-3" role="alert">
-                @Feedback
-            </div>
-        }
     </div>
 
     <RegisterParticipantModal @ref="registerModal" OnRegistered="HandleRegistered" />
@@ -248,7 +246,6 @@
             if (selectedEventId == value) return;
             selectedEventId = value;
             SelectedRaceId = 0; // reset al cambiar evento
-            Feedback = null;
         }
     }
 
@@ -260,11 +257,8 @@
         {
             if (selectedRaceId == value) return;
             selectedRaceId = value;
-            Feedback = null;
         }
     }
-
-    private string? Feedback { get; set; }
 
     private bool CanContinue => SelectedEventId != 0 && SelectedRaceId != 0;
 
@@ -299,7 +293,19 @@
 
     private async Task HandleRegistered(SportEventManager.Models.Registration registration)
     {
-        Feedback = $"Inscripción creada (# {registration.RegistrationId}).";
+        // Notificación verde estilo Participants
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Inscripción creada con éxito",
+            Detail = "Te has registrado a la carrera. Recibirás más detalles en tu correo.",
+            Duration = 6000,
+            Style = "position: fixed; bottom: 20px; right: 20px;"
+        });
+
+        // Reset de selección
+        SelectedEventId = 0;
+        SelectedRaceId = 0;
         await Task.Yield();
     }
 

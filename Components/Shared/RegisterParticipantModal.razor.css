@@ -1,0 +1,30 @@
+.custom-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Panel informativo lateral (tema oscuro por defecto; respeta variable si existe) */
+.how-it-works-panel {
+    background-color: var(--color-card-background, #1e1e1e);
+    background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15));
+    background-blend-mode: multiply;
+    border: 1px solid var(--color-border, #2a2a2a);
+}
+
+/* Ancho del input para OTP */
+.otp-code-input {
+  max-width: 160px;
+}
+
+/* Numeración de pasos (copiada de Home para css isolation del modal) */
+.step-number {
+  width: clamp(1.5rem, 4vw, 2.5rem);
+  height: clamp(1.5rem, 4vw, 2.5rem);
+  background-color: var(--color-secondary);
+  font-weight: bold;
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

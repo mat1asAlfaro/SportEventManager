@@ -29,6 +29,7 @@ namespace SportEventManager.Data.Persistence
         public DbSet<Split> Splits { get; set; }
         public DbSet<TimeRecord> TimeRecords { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
+        public DbSet<VerificationToken> VerificationTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -124,6 +125,9 @@ namespace SportEventManager.Data.Persistence
             modelBuilder.Entity<Participant>()
                 .HasIndex(p => p.Email)
                 .IsUnique();
+
+            modelBuilder.Entity<VerificationToken>()
+               .HasIndex(v => new { v.Email, v.Purpose, v.Consumed, v.ExpiresAt });
 
             // Seed Data
             modelBuilder.Entity<Event>().HasData(
