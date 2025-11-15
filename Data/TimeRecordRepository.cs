@@ -381,7 +381,7 @@ namespace SportEventManager.Data
             // Porcentajes
             // ============
             dto.ProgressPercentage =
-                totalRaceKm > 0 ? Math.Round(dto.InterpolatedDistance / totalRaceKm * 100, 2) : 0;
+                totalRaceKm > 0 ? Math.Round(dto.DistanceCompleted / totalRaceKm * 100, 2) : 0;
 
             dto.SplitsPercentage =
                 totalSplits > 0 ? Math.Round((double)completedSplits / totalSplits * 100, 2) : 0;

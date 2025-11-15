@@ -1,6 +1,7 @@
 @page "/live"
 @using Radzen
 @using Radzen.Blazor
+@using SportEventManager.Components.Pages.Account
 @using SportEventManager.Core
 @using SportEventManager.Core.Services
 @using SportEventManager.DTOs
@@ -150,8 +151,7 @@
           </div>
 
           <div class="progress" style="height: 10px;">
-            <div class="progress-bar bg-success" role="progressbar"
-              style="width: @liveParticipantData.ProgressPercentage%;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: @ProgressPercentageInt%;">
             </div>
           </div>
 
@@ -383,6 +383,16 @@
     .ToList();
 
     selectedRaceId = null;
+  }
+
+  private int ProgressPercentageInt
+  {
+    get
+    {
+      if
+      (liveParticipantData?.ProgressPercentageInterpolated == null) return 0;
+      return (int)Math.Round(liveParticipantData.ProgressPercentageInterpolated);
+    }
   }
 
   private async Task SearchParticipant()
