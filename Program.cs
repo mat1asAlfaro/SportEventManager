@@ -42,6 +42,9 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<ITimeRecordRepository, TimeRecordRepository>();
 builder.Services.AddScoped<ITimingCalculationsService, TimingCalculationsService>();
+builder.Services.AddScoped<IEmailSender, DevEmailSenderService>();
+builder.Services.AddScoped<IVerificationService, OtpVerificationService>();
+builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
 
 builder.Services.AddDbContextFactory<SportEventDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
