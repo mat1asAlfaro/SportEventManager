@@ -258,18 +258,66 @@
                 
                 if (update.RaceId == RaceId && update.SplitId == _prefinishSplitId)
                 {
-                    int bibNumber = update.BibNumber ?? await GetBibNumberForUpdate(update.ChipId);
+                    int bibNumber = 0;
+                    string participantName = "Corredor";
+                    int actualChipId = update.ChipId;
+                    
+                    try
+                    {
+                        await using var context = DbContextFactory.CreateDbContext();
+                        
+                        if (actualChipId == 0)
+                        {
+                            var latestRecord = await context.TimeRecords
+                                .Where(tr => tr.RaceId == RaceId && 
+                                            tr.SplitId == update.SplitId &&
+                                            tr.Timestamp == update.Timestamp)
+                                .OrderByDescending(tr => tr.TimeRecordId)
+                                .Select(tr => tr.ChipId)
+                                .FirstOrDefaultAsync();
+                            
+                            if (latestRecord > 0)
+                            {
+                                actualChipId = latestRecord;
+                            }
+                        }
+                        
+                        if (actualChipId > 0)
+                        {
+                            var regInfo = await (from rc in context.RegistrationChips
+                                                join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
+                                                join p in context.Participants on r.ParticipantId equals p.ParticipantId
+                                                where rc.ChipId == actualChipId && r.RaceId == RaceId
+                                                select new
+                                                {
+                                                    r.BibNumber,
+                                                    ParticipantName = (p.FirstName + " " + p.LastName).Trim()
+                                                }).FirstOrDefaultAsync();
+                            
+                            if (regInfo != null)
+                            {
+                                bibNumber = regInfo.BibNumber ?? 0;
+                                participantName = regInfo.ParticipantName;
+                            }
+                        }
+                    }
+                    catch { }
 
+                    // Convertir timestamp UTC a local antes de calcular
+                    var timestampLocal = update.Timestamp.Kind == DateTimeKind.Utc 
+                        ? update.Timestamp.ToLocalTime() 
+                        : update.Timestamp;
+                    
                     var elapsed = _raceStartTime.HasValue 
-                        ? update.Timestamp - _raceStartTime.Value
-                        : (update.TimeFromStart ?? TimeSpan.Zero);
+                        ? timestampLocal - _raceStartTime.Value
+                        : TimeSpan.Zero;
                     
                     var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
 
                     var newFinisher = new FinisherData
                     {
                         BibNumber = bibNumber,
-                        ParticipantName = update.ParticipantName ?? "Corredor",
+                        ParticipantName = participantName,
                         ElapsedTime = elapsedTime,
                         Timestamp = update.Timestamp
                     };
@@ -311,26 +359,6 @@
             }
         }
         catch { }
-    }
-
-    private async Task<int> GetBibNumberForUpdate(int chipId)
-    {
-        try
-        {
-            await using var context = DbContextFactory.CreateDbContext();
-            
-            var bibNumber = await context.Registrations
-                .Where(r => r.RaceId == RaceId && 
-                           r.RegistrationChips!.Any(rc => rc.ChipId == chipId))
-                .Select(r => r.BibNumber)
-                .FirstOrDefaultAsync();
-
-            return bibNumber ?? 0;
-        }
-        catch
-        {
-            return 0;
-        }
     }
 
     public async ValueTask DisposeAsync()
