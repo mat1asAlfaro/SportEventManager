@@ -1,4 +1,6 @@
 @page "/admin/participants"
+
+@using Microsoft.AspNetCore.Authorization
 @using Radzen
 @using Radzen.Blazor
 @using SportEventManager.Core
@@ -11,6 +13,8 @@
 @inject IRegistrationRepository RegistrationRepository
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation
+
+@attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Participantes</PageTitle>
 

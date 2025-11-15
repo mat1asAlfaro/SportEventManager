@@ -14,13 +14,13 @@
         <ValidationSummary />
 
         <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
+            <label for="username" class="form-label">Usuario</label>
             <InputText id="username" class="form-control" @bind-Value="Model.Username" />
             <ValidationMessage For="@(() => Model.Username)" />
         </div>
 
         <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
+            <label for="password" class="form-label">Contraseña</label>
             <InputText id="password" type="password" class="form-control" @bind-Value="Model.Password" />
             <ValidationMessage For="@(() => Model.Password)" />
         </div>
@@ -29,7 +29,7 @@
             <span class="text-danger">@errorMessage</span>
         </div>
 
-        <button type="submit" class="btn btn-primary">Login</button>
+        <button type="submit" class="btn btn-primary">Iniciar sesión</button>
     </EditForm>
 </div>
 
@@ -58,7 +58,7 @@
 
         if (userAccount == null || userAccount.PasswordHash != Model.Password)
         {
-            errorMessage = "Invalid username or password.";
+            errorMessage = "Nombre de usuario o contraseña inválidos.";
             return;
         }
 
