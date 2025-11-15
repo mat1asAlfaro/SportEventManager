@@ -5,7 +5,6 @@ using SportEventManager.Models;
 
 namespace SportEventManager.Services
 {
-    // Interfaz para cálculos de tiempos, pace y velocidades
     public interface ITimingCalculationsService
     {
         string CalculatePace(TimeSpan time, double distanceKm);
@@ -13,7 +12,6 @@ namespace SportEventManager.Services
         int CalculatePosition(List<TimeRecord> records, int targetRecordId);
     }
 
-    // Servicio para realizar cálculos relacionados con timing de carreras
     public class TimingCalculationsService : ITimingCalculationsService
     {
         // Calcula el pace (ritmo) en formato "min:seg/km"

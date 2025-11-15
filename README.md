@@ -129,6 +129,11 @@ volumes:
 
 ---
 
+## Para simular una carrera
+    ```
+    .\simulate-race.ps1
+    ```
+
 ## 🤝 Contribución
 
 ¡Las **contribuciones son bienvenidas**! Si deseas mejorar el proyecto, sigue estos pasos:
