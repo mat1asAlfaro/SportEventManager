@@ -15,6 +15,7 @@ namespace SportEventManager.DTOs
         public string? EventName { get; set; }
         public int CategoryId { get; set; }
         public string? Status { get; set; }
+        public string? ParticipantName { get; set; }
         public int? BibNumber { get; set; }
         public ICollection<RegistrationChipDTO>? RegistrationChips { get; set; }
     }

@@ -11,6 +11,7 @@ namespace SportEventManager.DTOs
         public int EventId { get; set; }
         public string? RaceName { get; set; }
         public string? EventName { get; set; }
+        public EventDTO? Event { get; set; }
         public double DistanceKm { get; set; }
         public int TotalParticipantRegistration { get; set; }
         public int MaxParticipants { get; set; }
@@ -19,5 +20,7 @@ namespace SportEventManager.DTOs
         // public ICollection<RegistrationDTO>? Registrations { get; set; }
         public ICollection<SplitDTO>? Splits { get; set; }
         // public ICollection<TimeRecordDTO>? TimeRecords { get; set; }
+        public ICollection<RegistrationDTO>? Registrations { get; set; }
+        public ICollection<TimeRecordResponseDTO>? TimeRecords { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Identity.Client;
 using SportEventManager.Core;
 using SportEventManager.Data.Persistence;
 using SportEventManager.Models;
+using SportEventManager.DTOs;
 
 namespace SportEventManager.Data
 {
@@ -100,5 +101,79 @@ namespace SportEventManager.Data
     {
       return await GetRaceByIdAsync(raceId);
     }
+    public async Task<RaceDTO?> GetRaceDTOByIdAsync(int raceId)
+{
+  await using var _context = _contextFactory.CreateDbContext();
+
+  var race = await _context.Races
+    .Include(r => r.Splits!)
+    .Include(r => r.TimeRecords!)
+        .ThenInclude(tr => tr.Split)
+    .FirstOrDefaultAsync(r => r.RaceId == raceId);
+
+  if (race == null)
+    return null;
+
+  var eventName = await _context.Events
+      .Where(e => e.EventId == race.EventId)
+      .Select(e => e.Name)
+      .FirstOrDefaultAsync();
+
+  // Cargar registraciones con proyección incluyendo el nombre del participante
+  var registrations = await _context.Registrations
+      .Where(rg => rg.RaceId == raceId)
+      .Select(rg => new RegistrationDTO
+      {
+        RegistrationId = rg.RegistrationId,
+        ParticipantId = rg.ParticipantId,
+        RaceId = rg.RaceId,
+        CategoryId = rg.CategoryId,
+        BibNumber = rg.BibNumber,
+        Status = rg.Status,
+        ParticipantName = rg.Participant != null 
+            ? (rg.Participant.FirstName + " " + rg.Participant.LastName).Trim()
+            : null, 
+        RegistrationChips = rg.RegistrationChips!.Select(c => new RegistrationChipDTO
+        {
+          RegistrationChipId = c.RegistrationChipId,
+          RegistrationId = c.RegistrationId,
+          ChipId = c.ChipId,
+        }).ToList()
+      })
+      .ToListAsync();
+
+  return new RaceDTO
+  {
+    RaceId = race.RaceId,
+    EventId = race.EventId,
+    RaceName = race.Name,
+    EventName = eventName,
+    DistanceKm = race.DistanceKm,
+    MaxParticipants = race.MaxParticipants,
+    StartTime = race.StartTime,
+    TotalParticipantRegistration = registrations.Count,
+
+    Registrations = registrations,
+
+    Splits = race.Splits?.Select(s => new SplitDTO
+    {
+      SplitId = s.SplitId,
+      RaceId = s.RaceId,
+      SplitName = s.SplitName,
+      KmMark = s.KmMark,
+    }).ToList(),
+
+    TimeRecords = race.TimeRecords?.Select(t => new TimeRecordResponseDTO
+    {
+      TimeRecordId = t.TimeRecordId,
+      ChipId = t.ChipId,
+      RaceId = t.RaceId,
+      SplitId = t.SplitId,
+      SplitName = t.Split?.SplitName,
+      KmMark = t.Split?.KmMark,
+      Timestamp = t.Timestamp
+    }).ToList()
+  };
+}
   }
 }
