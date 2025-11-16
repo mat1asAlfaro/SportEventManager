@@ -16,6 +16,13 @@ $races = @(
         Name = "Carrera 2"
         Splits = @(3, 4)
         Runners = @(3, 4, 7, 8)  # ChipIds de corredores en carrera 2
+    },
+    @{
+        RaceId = 3
+        Name = "Carrera 10K"
+        # Orden: Largada -> 2.5 -> 4 -> 5 -> 6 -> 7.5 -> Llegada
+        Splits = @(1005, 1001, 1002, 1003, 1007, 1004, 1006)
+        Runners = @()
     }
 )
 

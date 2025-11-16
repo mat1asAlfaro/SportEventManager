@@ -1,0 +1,60 @@
+.rankings-section {
+    background-color: var(--color-main-background);
+}
+
+.leaderboard-icon-border {
+  width: 4rem;
+  height: 4rem;
+}
+
+.rankings-panel {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  max-width: 52rem;
+  margin: 0 auto; 
+}
+
+::deep .search-container {
+  background-color: transparent; 
+  border: none; 
+  border-radius: 0.5rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem; 
+}
+
+::deep .form-label {
+  color: var(--color-primary-text);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.toggle-group {
+  border: 1px solid var(--color-border);
+  background-color: rgba(255,255,255,0.03);
+  padding: 0.25rem;
+  border-radius: 1rem;
+  gap: 0.25rem;
+}
+
+.segmented-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.75rem;
+  border: none;
+  color: var(--color-secondary-text);
+  background-color: transparent;
+}
+
+.segmented-button.active {
+  background-color: var(--color-primary, #3f51b5);
+  color: #fff;
+}
+
+::deep .leaderboard-table thead th {
+  color: var(--color-secondary-text);
+  font-weight: 500;
+}

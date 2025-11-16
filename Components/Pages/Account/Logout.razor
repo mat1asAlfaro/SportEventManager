@@ -1,22 +1,138 @@
 @page "/logout"
 
 @using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@rendermode InteractiveServer
 @inject NavigationManager NavigationManager
-<h1>Logging out...</h1>
+@inject ILogger<Logout> Logger
+@inject AuthenticationStateProvider AuthStateProvider
 
+<div class="container-lg px-4 px-sm-5 px-lg-4 py-5 d-flex justify-content-center">
+  @if (isProcessing)
+  {
+    <div class="text-center logout-card">
+      <div class="d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4 logout-status-icon">
+        <span class="material-symbols-outlined fs-1">logout</span>
+      </div>
+      <h1 class="fw-bold mb-2">Cerrando sesión</h1>
+      <p class="text-secondary mb-4">Por favor espera un momento mientras finalizamos tu sesión.</p>
+      <div class="spinner-border text-primary mb-3" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <small class="text-secondary d-block">Serás redirigido automáticamente.</small>
+    </div>
+  }
+  else if (hasError)
+  {
+    <div class="text-center logout-card">
+      <div class="d-inline-flex align-items-center justify-content-center bg-danger rounded-4 mb-4 logout-status-icon">
+        <span class="material-symbols-outlined fs-1">error</span>
+      </div>
+      <h1 class="fw-bold mb-2 text-danger">Error</h1>
+      <p class="text-secondary mb-4">Ocurrió un problema al cerrar la sesión. Intenta nuevamente.</p>
+      <button class="btn btn-danger d-inline-flex align-items-center gap-2" @onclick="Retry">
+        <span class="material-symbols-outlined fs-5">refresh</span>
+        Reintentar
+      </button>
+    </div>
+  }
+  else if (!wasAuthenticated)
+  {
+    <div class="text-center logout-card">
+      <div class="d-inline-flex align-items-center justify-content-center bg-secondary rounded-4 mb-4 logout-status-icon">
+        <span class="material-symbols-outlined fs-1">person_off</span>
+      </div>
+      <h1 class="fw-bold mb-2">Sin sesión activa</h1>
+      <p class="text-secondary mb-4">No había una sesión iniciada. Puedes volver al inicio o iniciar sesión.</p>
+      <div class="d-flex justify-content-center gap-2">
+        <button class="btn btn-outline-secondary" @onclick="NavigateHome">Inicio</button>
+        <button class="btn btn-primary" @onclick="NavigateLogin">Iniciar Sesión</button>
+      </div>
+    </div>
+  }
+  else
+  {
+    <div class="text-center logout-card">
+      <div class="d-inline-flex align-items-center justify-content-center bg-success rounded-4 mb-4 logout-status-icon">
+        <span class="material-symbols-outlined fs-1">check_circle</span>
+      </div>
+      <h1 class="fw-bold mb-2">Sesión cerrada</h1>
+      <p class="text-secondary mb-2">Tu sesión se cerró correctamente.</p>
+      <p class="text-secondary mb-4">Redirigiendo...</p>
+      <div class="spinner-border text-success" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  }
+</div>
 
 @code {
-    [CascadingParameter]
-    public HttpContext HttpContext { get; set; }
+    [CascadingParameter] public HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] public Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private bool isProcessing = true;
+    private bool hasError = false;
+    private bool wasAuthenticated = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
-        if (HttpContext.User.Identity?.IsAuthenticated == true)
+        var authState = AuthenticationStateTask != null ? await AuthenticationStateTask : await AuthStateProvider.GetAuthenticationStateAsync();
+        wasAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+        if (wasAuthenticated)
         {
-            await HttpContext.SignOutAsync();
-            NavigationManager.NavigateTo("/admin");
+            _ = SignOutFlow();
+        }
+        else
+        {
+            isProcessing = false;
         }
     }
-    
+
+    private async Task SignOutFlow()
+    {
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+
+            if (HttpContext != null)
+            {
+                await HttpContext.SignOutAsync();
+            }
+            else
+            {
+                Logger?.LogWarning("HttpContext nulo al cerrar sesión");
+            }
+
+            await Task.Delay(1000);
+            isProcessing = false;
+            StateHasChanged();
+            await Task.Delay(700);
+            try
+            {
+                NavigationManager.NavigateTo("/admin", forceLoad: true, replace: true);
+            }
+            catch (NavigationException) { }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            isProcessing = false;
+            Logger?.LogError(ex, "Error en flujo de cierre de sesión");
+            StateHasChanged();
+        }
+    }
+
+    private async Task Retry()
+    {
+        hasError = false;
+        isProcessing = true;
+        StateHasChanged();
+        await SignOutFlow();
+    }
+
+    private void NavigateHome() => NavigationManager.NavigateTo("/", forceLoad: true);
+    private void NavigateLogin() => NavigationManager.NavigateTo("/admin", forceLoad: true);
 }

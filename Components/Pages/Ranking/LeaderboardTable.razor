@@ -1,0 +1,209 @@
+@using Radzen
+@using Radzen.Blazor
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@using SportEventManager.Models
+@inject ITimeRecordRepository TimeRecordRepository
+@inject ISplitRepository SplitRepository
+@inject IRegistrationRepository RegistrationRepository
+@inject IRaceRepository RaceRepository
+@inject SportEventManager.Services.ITimingCalculationsService TimingService
+
+@* Tabla de posiciones con filtros y paginado *@
+<div class="card shadow-sm border-0 mt-4">
+  <div class="card-header border-bottom-0 pb-0">
+    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-end">
+      <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
+        <div class="position-relative">
+          <span class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 start-0 translate-middle-y ms-3">search</span>
+          <input type="text" class="form-control ps-5 placeholder-white" placeholder="Buscar corredor..." @oninput="OnSearchTextChanged" />
+        </div>
+      </div>
+      <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
+        <select class="form-select" @onchange="OnCategoryChanged">
+          <option value="">Todas las categorías</option>
+          @foreach (var c in categories)
+          {
+            <option value="@c" selected="@(selectedCategory == c)">@c</option>
+          }
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <RadzenDataGrid Data="@filteredRows" TItem="LeaderboardRow" AllowPaging="true" PageSize="10" AllowSorting="false" ShowPagingSummary="true" Class="custom-data-grid-scroll">
+      <Columns>
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Pos." Width="80px" Property="Position" />
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Atleta" Width="240px">
+          <Template Context="r">
+            <div class="d-flex align-items-center gap-2">
+              <span class="material-symbols-outlined text-secondary fs-2">account_circle</span>
+              <div>
+                <div class="fw-semibold">@r.ParticipantName</div>
+                @if (r.BibNumber.HasValue)
+                {
+                  <small class="text-secondary">Dorsal #@r.BibNumber</small>
+                }
+              </div>
+            </div>
+          </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Tiempo" Width="140px">
+          <Template Context="r">@r.TotalTimeFormatted</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Ritmo" Width="120px">
+          <Template Context="r">@r.PaceFormatted</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categoría" Width="180px">
+          <Template Context="r">@r.CategoryName</Template>
+        </RadzenDataGridColumn>
+      </Columns>
+
+      <EmptyTemplate>
+        <div class="d-flex flex-column justify-content-center align-items-center py-5 text-center w-100">
+          <span class="material-symbols-outlined text-secondary fs-1 mb-2">leaderboard</span>
+          <h6 class="fw-semibold text-secondary mb-1">Sin resultados</h6>
+          <p class="small mb-0">No se encontraron resultados para esta carrera.</p>
+        </div>
+      </EmptyTemplate>
+    </RadzenDataGrid>
+  </div>
+</div>
+
+@code {
+  [Parameter] public int RaceId { get; set; }
+
+  private List<LeaderboardRow> rows = new();
+  private List<LeaderboardRow> filteredRows = new();
+  private List<string> categories = new();
+  private string? selectedCategory;
+  private string searchText = string.Empty;
+  private double raceDistanceKm;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    await LoadDataAsync();
+    ApplyFilters();
+  }
+
+  private async Task LoadDataAsync()
+  {
+    rows.Clear();
+    categories.Clear();
+    selectedCategory = null;
+
+    if (RaceId <= 0) return;
+
+    var race = await RaceRepository.GetByIdAsync(RaceId);
+    raceDistanceKm = race?.DistanceKm ?? 0;
+
+    var registrations = (await RegistrationRepository.GetByRaceIdAsync(RaceId)).ToList();
+    var regByChipId = registrations
+      .Where(r => r.RegistrationChips != null)
+      .SelectMany(r => r.RegistrationChips!.Select(rc => new { rc.ChipId, Reg = r }))
+      .ToDictionary(x => x.ChipId, x => new {
+        Name = $"{x.Reg.Participant?.FirstName} {x.Reg.Participant?.LastName}".Trim(),
+        Bib = x.Reg.BibNumber,
+        Category = x.Reg.Category?.ExternalName ?? x.Reg.Category?.InternalName ?? ""
+      });
+
+    categories = registrations
+      .Select(r => r.Category?.ExternalName ?? r.Category?.InternalName)
+      .Where(n => !string.IsNullOrWhiteSpace(n))
+      .Distinct()
+      .OrderBy(n => n)
+      .ToList()!;
+
+    var splits = (await SplitRepository.GetByRaceIdAsync(RaceId)).ToList();
+    var finalSplit = splits
+      .OrderByDescending(s => s.KmMark ?? 0)
+      .FirstOrDefault();
+
+    if (finalSplit == null) {
+      rows = new();
+      return;
+    }
+
+    var records = await TimeRecordRepository.GetTimeRecordsByRaceAsync(RaceId);
+
+    var groupedByChip = records
+      .GroupBy(r => r.ChipId)
+      .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList());
+
+    var finishByChip = records
+      .Where(r => r.SplitId == finalSplit.SplitId)
+      .GroupBy(r => r.ChipId)
+      .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).Last());
+
+    foreach (var kv in finishByChip)
+    {
+      var chipId = kv.Key;
+      var finish = kv.Value;
+      if (!groupedByChip.TryGetValue(chipId, out var allChip)) continue;
+
+      var start = allChip.First();
+      var total = finish.Timestamp - start.Timestamp;
+
+      regByChipId.TryGetValue(chipId, out var regInfo);
+
+      var pace = raceDistanceKm > 0 ? TimingService.CalculatePace(total, raceDistanceKm) : "--";
+
+      rows.Add(new LeaderboardRow
+      {
+        ParticipantName = regInfo?.Name ?? finish.ParticipantName ?? $"Chip {chipId}",
+        BibNumber = regInfo?.Bib,
+        CategoryName = regInfo?.Category ?? "—",
+        TotalTime = total,
+        PaceFormatted = pace
+      });
+    }
+
+    rows = rows
+      .OrderBy(r => r.TotalTime)
+      .Select((r, idx) => { r.Position = idx + 1; return r; })
+      .ToList();
+  }
+
+  private void ApplyFilters()
+  {
+    IEnumerable<LeaderboardRow> query = rows;
+
+    if (!string.IsNullOrWhiteSpace(searchText))
+    {
+      var txt = searchText.Trim();
+      query = query.Where(r => (r.ParticipantName?.Contains(txt, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    if (!string.IsNullOrWhiteSpace(selectedCategory))
+    {
+      query = query.Where(r => string.Equals(r.CategoryName, selectedCategory, StringComparison.OrdinalIgnoreCase));
+    }
+
+    filteredRows = query.ToList();
+  }
+
+  private void OnSearchTextChanged(ChangeEventArgs e)
+  {
+    searchText = e.Value?.ToString() ?? string.Empty;
+    ApplyFilters();
+  }
+
+  private void OnCategoryChanged(ChangeEventArgs e)
+  {
+    selectedCategory = e.Value?.ToString();
+    if (string.IsNullOrEmpty(selectedCategory)) selectedCategory = null;
+    ApplyFilters();
+  }
+
+  private class LeaderboardRow
+  {
+    public int Position { get; set; }
+    public string? ParticipantName { get; set; }
+    public int? BibNumber { get; set; }
+    public TimeSpan TotalTime { get; set; }
+    public string TotalTimeFormatted => string.Format("{0:hh\\:mm\\:ss}", TotalTime);
+    public string? CategoryName { get; set; }
+    public string PaceFormatted { get; set; } = "--";
+  }
+}
