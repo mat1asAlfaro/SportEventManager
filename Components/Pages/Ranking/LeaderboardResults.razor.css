@@ -1,0 +1,7 @@
+/* CSS scoped del componente LeaderboardResults.
+   No usar @import en archivos .razor.css. Los estilos compartidos
+   se heredan desde Results.razor.css usando ::deep en el padre. */
+
+/* Estilos extra específicos de la pestaña (opcional)
+.leaderboard-table { }
+*/

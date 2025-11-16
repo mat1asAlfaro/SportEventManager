@@ -1,0 +1,43 @@
+@* Componente: Leaderboard (solo filtros de selección) *@
+<div class="search-container mb-0">
+  <h5 class="fw-bold mb-2">Leaderboard</h5>
+  <p class="text-secondary mb-4">Selecciona el evento y la carrera para ver la tabla de posiciones</p>
+
+  <div class="mb-3">
+    <label class="form-label">Evento</label>
+    <select class="form-select" @onchange="OnEventChanged">
+      <option value="">Selecciona un evento</option>
+      @* Opciones reales deberán cargarse dinámicamente *@
+    </select>
+  </div>
+
+  <div class="mb-0">
+    <label class="form-label">Carrera</label>
+    <select class="form-select" disabled="@(!isRaceEnabled)" @onchange="OnRaceChanged">
+      <option value="">Selecciona una carrera</option>
+      @* Opciones reales deberán cargarse dinámicamente según el evento *@
+    </select>
+  </div>
+</div>
+
+@code {
+  [Parameter] public EventCallback<string?> OnEventChange { get; set; }
+  [Parameter] public EventCallback<string?> OnRaceChange { get; set; }
+
+  private bool isRaceEnabled = false;
+
+  private async Task OnEventChanged(ChangeEventArgs e)
+  {
+    var value = e.Value?.ToString();
+    isRaceEnabled = !string.IsNullOrWhiteSpace(value);
+    // reset selección de carrera cuando cambia el evento
+    await OnEventChange.InvokeAsync(value);
+    await OnRaceChange.InvokeAsync(null);
+  }
+
+  private async Task OnRaceChanged(ChangeEventArgs e)
+  {
+    var value = e.Value?.ToString();
+    await OnRaceChange.InvokeAsync(value);
+  }
+}
