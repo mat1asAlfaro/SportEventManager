@@ -5,34 +5,61 @@
 @using SportEventManager.DTOs
 @using System.Security.Claims
 @using System.Net
+@using Microsoft.AspNetCore.Http
 @inject NavigationManager NavigationManager
 @inject SportEventManager.Core.IUserAccountRepository UserAccountRepository
 
-<div class="row">
-    <EditForm Model="@Model" class="col-md-4 offset-md-4" OnValidSubmit="Authenticate" FormName="LoginForm">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="mb-3">
-            <label for="username" class="form-label">Usuario</label>
-            <InputText id="username" class="form-control" @bind-Value="Model.Username" />
-            <ValidationMessage For="@(() => Model.Username)" />
+<div class="d-flex align-items-center justify-content-center py-5">
+    <div class="login-card p-4 p-sm-5 shadow-sm position-relative">
+        <div class="text-center mb-4">
+            <div class="login-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-gradient mb-3 shadow" style="background: linear-gradient(135deg, var(--color-primary) 0%, #6c5ce7 100%);">
+                <span class="material-symbols-outlined fs-1 text-light">lock</span>
+            </div>
+            <h2 class="fw-bold mb-1">Acceso Administración</h2>
+            <p class="text-secondary mb-0">Ingresa tus credenciales para continuar</p>
         </div>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Contraseña</label>
-            <InputText id="password" type="password" class="form-control" @bind-Value="Model.Password" />
-            <ValidationMessage For="@(() => Model.Password)" />
-        </div>
+        <EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-        <div class="mb-3">
-            <span class="text-danger">@errorMessage</span>
-        </div>
+            <div class="mb-3">
+                <label for="username" class="form-label fw-semibold">Usuario</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <span class="material-symbols-outlined fs-6">person</span>
+                    </span>
+                    <InputText id="username" class="form-control border-start-0" @bind-Value="Model.Username" placeholder="Tu nombre de usuario" autocomplete="username" />
+                </div>
+                <ValidationMessage For="@(() => Model.Username)" />
+            </div>
 
-        <button type="submit" class="btn btn-primary">Iniciar sesión</button>
-    </EditForm>
+            <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <span class="material-symbols-outlined fs-6">vpn_key</span>
+                    </span>
+                    <InputText id="password" type="password" class="form-control border-start-0" @bind-Value="Model.Password" placeholder="••••••••" autocomplete="current-password" />
+                </div>
+                <ValidationMessage For="@(() => Model.Password)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">error</span>
+                    <span>@errorMessage</span>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                <span class="material-symbols-outlined fs-5">login</span>
+                <span>Iniciar sesión</span>
+            </button>
+        </EditForm>
+    </div>
 </div>
-
 
 @code {
     [CascadingParameter]
@@ -54,21 +81,25 @@
     private async Task Authenticate(){
         var userAccount = await UserAccountRepository.GetByUsernameAsync(Model.Username);
 
-        //TODO : UnHash password if needed
-
         if (userAccount == null || userAccount.PasswordHash != Model.Password)
         {
             errorMessage = "Nombre de usuario o contraseña inválidos.";
             return;
         }
 
+        if (HttpContext is null)
+        {
+            errorMessage = "No se pudo acceder al contexto HTTP para autenticar.";
+            return;
+        }
+
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Name, userAccount.Username),
-            new Claim(ClaimTypes.Role, userAccount.Role)
+            new Claim(ClaimTypes.Name, userAccount.Username ?? string.Empty),
+            new Claim(ClaimTypes.Role, userAccount.Role ?? string.Empty)
         };
 
-        var identity = new ClaimsIdentity(claims,CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
         await HttpContext.SignInAsync(principal);
         NavigationManager.NavigateTo("/admin/dashboard");
