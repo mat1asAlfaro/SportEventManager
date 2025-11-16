@@ -1,4 +1,8 @@
 @* Componente: Leaderboard (solo filtros de selección) *@
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@inject IEventRepository EventRepository
+
 <div class="search-container mb-0">
   <h5 class="fw-bold mb-2">Leaderboard</h5>
   <p class="text-secondary mb-4">Selecciona el evento y la carrera para ver la tabla de posiciones</p>
@@ -7,37 +11,95 @@
     <label class="form-label">Evento</label>
     <select class="form-select" @onchange="OnEventChanged">
       <option value="">Selecciona un evento</option>
-      @* Opciones reales deberán cargarse dinámicamente *@
+      @foreach (var ev in finishedEvents)
+      {
+        <option value="@ev.EventId">@ev.Name (@ev.EndDate.ToString("dd/MM/yyyy"))</option>
+      }
     </select>
   </div>
 
-  <div class="mb-0">
+  <div class="mb-3">
     <label class="form-label">Carrera</label>
     <select class="form-select" disabled="@(!isRaceEnabled)" @onchange="OnRaceChanged">
       <option value="">Selecciona una carrera</option>
-      @* Opciones reales deberán cargarse dinámicamente según el evento *@
+      @if (isRaceEnabled)
+      {
+        foreach (var race in finishedRaces)
+        {
+          <option value="@race.RaceId">@race.RaceName (@race.StartTime.ToString("dd/MM/yyyy HH:mm"))</option>
+        }
+      }
     </select>
+  </div>
+
+  <div class="d-flex justify-content-center mt-2">
+    <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            disabled="@(string.IsNullOrWhiteSpace(selectedEventId) || string.IsNullOrWhiteSpace(selectedRaceId))"
+            @onclick="RequestShowTable">
+            <span class="material-symbols-outlined fs-4">social_leaderboard</span>
+      Ver leaderboard
+    </button>
   </div>
 </div>
 
 @code {
   [Parameter] public EventCallback<string?> OnEventChange { get; set; }
   [Parameter] public EventCallback<string?> OnRaceChange { get; set; }
+  [Parameter] public EventCallback OnShowTableRequested { get; set; }
 
   private bool isRaceEnabled = false;
+  private string? selectedEventId;
+  private string? selectedRaceId;
+
+  private List<EventDTO> finishedEvents = new();
+  private List<RaceDTO> finishedRaces = new();
+
+  protected override async Task OnInitializedAsync()
+  {
+    var events = await EventRepository.GetAllEventsWithRacesAndSplitsAsync();
+
+    var now = DateTime.Now;
+    finishedEvents = events
+      .Where(e => e.EndDate <= now)
+      .OrderByDescending(e => e.EndDate)
+      .ToList();
+  }
 
   private async Task OnEventChanged(ChangeEventArgs e)
   {
-    var value = e.Value?.ToString();
-    isRaceEnabled = !string.IsNullOrWhiteSpace(value);
-    // reset selección de carrera cuando cambia el evento
-    await OnEventChange.InvokeAsync(value);
+    selectedEventId = e.Value?.ToString();
+    isRaceEnabled = !string.IsNullOrWhiteSpace(selectedEventId);
+    selectedRaceId = null;
+
+    finishedRaces.Clear();
+    if (isRaceEnabled && int.TryParse(selectedEventId, out var eid))
+    {
+      var ev = finishedEvents.FirstOrDefault(x => x.EventId == eid);
+      if (ev is not null && ev.Races is not null)
+      {
+        var now = DateTime.Now;
+        finishedRaces = ev.Races
+          .Where(r => r.StartTime <= now)
+          .OrderByDescending(r => r.StartTime)
+          .ToList();
+      }
+    }
+
+    await OnEventChange.InvokeAsync(selectedEventId);
     await OnRaceChange.InvokeAsync(null);
   }
 
   private async Task OnRaceChanged(ChangeEventArgs e)
   {
-    var value = e.Value?.ToString();
-    await OnRaceChange.InvokeAsync(value);
+    selectedRaceId = e.Value?.ToString();
+    await OnRaceChange.InvokeAsync(selectedRaceId);
+  }
+
+  private async Task RequestShowTable()
+  {
+    if (!string.IsNullOrWhiteSpace(selectedEventId) && !string.IsNullOrWhiteSpace(selectedRaceId))
+    {
+      await OnShowTableRequested.InvokeAsync();
+    }
   }
 }

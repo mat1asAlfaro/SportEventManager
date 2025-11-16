@@ -41,14 +41,14 @@
     else if (activeTab == ClassificationTab.Leaderboard)
     {
       <div id="tabcontent-leaderboard">
-        <LeaderboardResults OnEventChange="HandleLeaderboardEventChange" OnRaceChange="HandleLeaderboardRaceChange" />
+        <LeaderboardResults OnEventChange="HandleLeaderboardEventChange" OnRaceChange="HandleLeaderboardRaceChange" OnShowTableRequested="ShowLeaderboardTable" />
       </div>
     }
   </div>
 
-  @if (activeTab == ClassificationTab.Leaderboard && CanShowLeaderboardTable)
+  @if (activeTab == ClassificationTab.Leaderboard && CanShowLeaderboardTable && showTable)
   {
-    <LeaderboardTable />
+    <LeaderboardTable RaceId="@ParseRaceId(selectedLeaderboardRace)" />
   }
 </div>
 
@@ -58,6 +58,7 @@
 
   private string? selectedLeaderboardEvent;
   private string? selectedLeaderboardRace;
+  private bool showTable;
   private bool CanShowLeaderboardTable => !string.IsNullOrWhiteSpace(selectedLeaderboardEvent) && !string.IsNullOrWhiteSpace(selectedLeaderboardRace);
 
   protected override void OnInitialized()
@@ -91,6 +92,7 @@
   private void SetTab(ClassificationTab tab)
   {
     activeTab = tab;
+    showTable = false;
     var frag = tab == ClassificationTab.ByBib ? "bybib" : "leaderboard";
     var baseUri = Navigation.Uri.Split('#')[0];
     // Actualiza el hash sin provocar scroll: no existe un elemento con ese id en el DOM
@@ -100,11 +102,26 @@
   private void HandleLeaderboardEventChange(string? value)
   {
     selectedLeaderboardEvent = string.IsNullOrWhiteSpace(value) ? null : value;
+    showTable = false; 
   }
 
   private void HandleLeaderboardRaceChange(string? value)
   {
     selectedLeaderboardRace = string.IsNullOrWhiteSpace(value) ? null : value;
+    showTable = false;
+  }
+
+  private void ShowLeaderboardTable()
+  {
+    if (CanShowLeaderboardTable)
+    {
+      showTable = true;
+    }
+  }
+
+  private static int ParseRaceId(string? value)
+  {
+    return int.TryParse(value, out var id) ? id : 0;
   }
 
   public void Dispose()

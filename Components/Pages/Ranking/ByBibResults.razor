@@ -1,4 +1,8 @@
 @* Componente: Resultados por dorsal (búsqueda individual) *@
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@inject IEventRepository EventRepository
+
 <div class="search-container">
   <h5 class="fw-bold mb-2">Buscar Resultados</h5>
   <p class="text-secondary mb-4">Selecciona el evento, la carrera e ingresa tu número de dorsal</p>
@@ -6,28 +10,126 @@
   <!-- Evento -->
   <div class="mb-3">
     <label class="form-label">Evento</label>
-    <select class="form-select">
-      <option value="" selected>Selecciona un evento</option>
+    <select class="form-select" @onchange="OnEventChanged">
+      <option value="">Selecciona un evento</option>
+      @foreach (var ev in finishedEvents)
+      {
+        <option value="@ev.EventId">@ev.Name (@ev.EndDate.ToString("dd/MM/yyyy"))</option>
+      }
     </select>
   </div>
 
   <!-- Carrera -->
   <div class="mb-3">
     <label class="form-label">Carrera</label>
-    <select class="form-select" disabled>
-      <option value="" selected>Selecciona una carrera</option>
+    <select class="form-select" disabled="@(!isRaceEnabled)" @onchange="OnRaceChanged">
+      <option value="">Selecciona una carrera</option>
+      @if (isRaceEnabled)
+      {
+        foreach (var race in finishedRaces)
+        {
+          <option value="@race.RaceId">@race.RaceName (@race.StartTime.ToString("dd/MM/yyyy HH:mm"))</option>
+        }
+      }
     </select>
   </div>
 
   <!-- Número de Dorsal -->
   <div class="mb-3">
     <label class="form-label">Número de Dorsal</label>
-    <input type="text" class="form-control" placeholder="Ej: 101" disabled />
+    <input type="text" class="form-control" placeholder="Ej: 101" @oninput="OnBibChanged" disabled="@(!isBibEnabled)" />
   </div>
 
   <!-- Botón Buscar -->
-  <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2" disabled>
-    <span class="material-symbols-outlined">search</span>
-    <span class="fw-semibold">Buscar Resultados</span>
-  </button>
+  <div class="d-flex justify-content-center mt-2">
+    <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
+            disabled="@(!CanSearch)"
+            @onclick="OnSearch">
+      <span class="material-symbols-outlined">search</span>
+      <span class="fw-semibold">Buscar Resultados</span>
+    </button>
+  </div>
+
 </div>
+
+@code {
+  private List<EventDTO> finishedEvents = new();
+  private List<RaceDTO> finishedRaces = new();
+
+  private bool isRaceEnabled;
+  private bool isBibEnabled;
+  private string? selectedEventId;
+  private string? selectedRaceId;
+  private string? bibNumber;
+
+  private bool CanSearch =>
+    !string.IsNullOrWhiteSpace(selectedEventId) &&
+    !string.IsNullOrWhiteSpace(selectedRaceId) &&
+    !string.IsNullOrWhiteSpace(bibNumber);
+
+  protected override async Task OnInitializedAsync()
+  {
+    var events = await EventRepository.GetAllEventsWithRacesAndSplitsAsync();
+    var now = DateTime.Now;
+
+    finishedEvents = events
+      .Where(e => e.EndDate <= now)
+      .OrderByDescending(e => e.EndDate)
+      .ToList();
+  }
+
+  private void ResetRaceAndBib()
+  {
+    selectedRaceId = null;
+    finishedRaces.Clear();
+    isRaceEnabled = false;
+    isBibEnabled = false;
+    bibNumber = null;
+  }
+
+  private void LoadRacesForEvent(int eventId)
+  {
+    var now = DateTime.Now;
+    var ev = finishedEvents.FirstOrDefault(e => e.EventId == eventId);
+    if (ev?.Races is null)
+    {
+      finishedRaces = new List<RaceDTO>();
+      return;
+    }
+
+    finishedRaces = ev.Races
+      .Where(r => r.StartTime <= now)
+      .OrderByDescending(r => r.StartTime)
+      .ToList();
+  }
+
+  private void OnEventChanged(ChangeEventArgs e)
+  {
+    selectedEventId = e.Value?.ToString();
+    ResetRaceAndBib();
+
+    if (!string.IsNullOrWhiteSpace(selectedEventId) && int.TryParse(selectedEventId, out var eid))
+    {
+      LoadRacesForEvent(eid);
+      isRaceEnabled = finishedRaces.Any();
+    }
+  }
+
+  private void OnRaceChanged(ChangeEventArgs e)
+  {
+    selectedRaceId = e.Value?.ToString();
+    isBibEnabled = !string.IsNullOrWhiteSpace(selectedRaceId);
+  }
+
+  private void OnBibChanged(ChangeEventArgs e)
+  {
+    bibNumber = e.Value?.ToString();
+  }
+
+  private Task OnSearch()
+  {
+    // Aquí se implementaría la navegación o la consulta para mostrar resultados individuales.
+    // Por ahora solo retornamos una tarea completada, ya que el requerimiento es de UI.
+    return Task.CompletedTask;
+  }
+}
