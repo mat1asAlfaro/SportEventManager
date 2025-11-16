@@ -133,7 +133,7 @@
             await _raceTimer.DisposeAsync();
             _raceTimer = null;
         }
-        
+
         if (_hubConnection is not null)
         {
             try
@@ -151,12 +151,12 @@
         _raceTimer = new System.Threading.Timer(async _ =>
         {
             if (_disposed) return;
-            
+
             if (_raceStartTime.HasValue)
             {
                 var elapsed = DateTime.Now - _raceStartTime.Value;
                 _elapsedRaceTime = $"{elapsed:hh\\:mm\\:ss}";
-                
+
                 try
                 {
                     await InvokeAsync(StateHasChanged);
@@ -216,19 +216,23 @@
         _finishers.Clear();
 
         var prefinishRecords = race.TimeRecords?
-            .Where(tr => tr.SplitId == _prefinishSplitId.Value)
-            .OrderBy(tr => tr.Timestamp)
-            .ToList() ?? new List<TimeRecordResponseDTO>();
+        .Where(tr => tr.SplitId == _prefinishSplitId.Value)
+        .OrderBy(tr => tr.Timestamp)
+        .ToList() ?? new List<TimeRecordResponseDTO>();
 
         foreach (var timeRecord in prefinishRecords)
         {
             var registration = race.Registrations?.FirstOrDefault(r =>
-                r.RegistrationChips?.Any(rc => rc.ChipId == timeRecord.ChipId) ?? false);
+            r.RegistrationChips?.Any(rc => rc.ChipId == timeRecord.ChipId) ?? false);
 
             if (registration == null) continue;
 
             var participantName = registration.ParticipantName ?? $"Participante #{registration.ParticipantId}";
-            var elapsed = timeRecord.Timestamp - _raceStartTime.Value;
+            var timestampLocal = timeRecord.Timestamp.Kind == DateTimeKind.Utc
+            ? timeRecord.Timestamp.ToLocalTime()
+            : timeRecord.Timestamp;
+
+            var elapsed = timestampLocal - _raceStartTime.Value;
             var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
 
             _finishers.Add(new FinisherData
@@ -248,52 +252,52 @@
         try
         {
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl(Navigation.ToAbsoluteUri("/timingHub"))
-                .WithAutomaticReconnect()
-                .Build();
+            .WithUrl(Navigation.ToAbsoluteUri("/timingHub"))
+            .WithAutomaticReconnect()
+            .Build();
 
             _hubConnection.On<LiveTimeUpdateDTO>("ReceiveTimeUpdate", async (update) =>
             {
                 if (_disposed) return;
-                
+
                 if (update.RaceId == RaceId && update.SplitId == _prefinishSplitId)
                 {
                     int bibNumber = 0;
                     string participantName = "Corredor";
                     int actualChipId = update.ChipId;
-                    
+
                     try
                     {
                         await using var context = DbContextFactory.CreateDbContext();
-                        
+
                         if (actualChipId == 0)
                         {
                             var latestRecord = await context.TimeRecords
-                                .Where(tr => tr.RaceId == RaceId && 
-                                            tr.SplitId == update.SplitId &&
-                                            tr.Timestamp == update.Timestamp)
-                                .OrderByDescending(tr => tr.TimeRecordId)
-                                .Select(tr => tr.ChipId)
-                                .FirstOrDefaultAsync();
-                            
+                .Where(tr => tr.RaceId == RaceId &&
+                tr.SplitId == update.SplitId &&
+                tr.Timestamp == update.Timestamp)
+                .OrderByDescending(tr => tr.TimeRecordId)
+                .Select(tr => tr.ChipId)
+                .FirstOrDefaultAsync();
+
                             if (latestRecord > 0)
                             {
                                 actualChipId = latestRecord;
                             }
                         }
-                        
+
                         if (actualChipId > 0)
                         {
                             var regInfo = await (from rc in context.RegistrationChips
-                                                join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
-                                                join p in context.Participants on r.ParticipantId equals p.ParticipantId
-                                                where rc.ChipId == actualChipId && r.RaceId == RaceId
-                                                select new
-                                                {
-                                                    r.BibNumber,
-                                                    ParticipantName = (p.FirstName + " " + p.LastName).Trim()
-                                                }).FirstOrDefaultAsync();
-                            
+                                                 join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
+                                                 join p in context.Participants on r.ParticipantId equals p.ParticipantId
+                                                 where rc.ChipId == actualChipId && r.RaceId == RaceId
+                                                 select new
+                                                 {
+                                                     r.BibNumber,
+                                                     ParticipantName = (p.FirstName + " " + p.LastName).Trim()
+                                                 }).FirstOrDefaultAsync();
+
                             if (regInfo != null)
                             {
                                 bibNumber = regInfo.BibNumber ?? 0;
@@ -304,14 +308,14 @@
                     catch { }
 
                     // Convertir timestamp UTC a local antes de calcular
-                    var timestampLocal = update.Timestamp.Kind == DateTimeKind.Utc 
-                        ? update.Timestamp.ToLocalTime() 
-                        : update.Timestamp;
-                    
-                    var elapsed = _raceStartTime.HasValue 
-                        ? timestampLocal - _raceStartTime.Value
-                        : TimeSpan.Zero;
-                    
+                    var timestampLocal = update.Timestamp.Kind == DateTimeKind.Utc
+        ? update.Timestamp.ToLocalTime()
+        : update.Timestamp;
+
+                    var elapsed = _raceStartTime.HasValue
+        ? timestampLocal - _raceStartTime.Value
+        : TimeSpan.Zero;
+
                     var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
 
                     var newFinisher = new FinisherData
@@ -336,13 +340,13 @@
             _hubConnection.Reconnected += async (connectionId) =>
             {
                 if (_disposed) return;
-                
+
                 await _hubConnection.SendAsync("SubscribeToRace", RaceId);
                 if (_prefinishSplitId.HasValue)
                 {
                     await _hubConnection.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
                 }
-                
+
                 try
                 {
                     await InvokeAsync(StateHasChanged);
@@ -365,13 +369,13 @@
     {
         if (_disposed) return;
         _disposed = true;
-        
+
         if (_raceTimer != null)
         {
             await _raceTimer.DisposeAsync();
             _raceTimer = null;
         }
-        
+
         if (_hubConnection is not null)
         {
             try
