@@ -1,11 +1,12 @@
-@* Componente: Resultados por dorsal (búsqueda individual) *@
+@* Componente: Resultados por dorsal (bÃºsqueda individual) *@
 @using SportEventManager.Core
 @using SportEventManager.DTOs
 @inject IEventRepository EventRepository
+@inject NavigationManager Navigation
 
 <div class="search-container">
   <h5 class="fw-bold mb-2">Buscar Resultados</h5>
-  <p class="text-secondary mb-4">Selecciona el evento, la carrera e ingresa tu número de dorsal</p>
+  <p class="text-secondary mb-4">Selecciona el evento, la carrera e ingresa tu nÃºmero de dorsal</p>
 
   <!-- Evento -->
   <div class="mb-3">
@@ -34,13 +35,13 @@
     </select>
   </div>
 
-  <!-- Número de Dorsal -->
+  <!-- NÃºmero de Dorsal -->
   <div class="mb-3">
-    <label class="form-label">Número de Dorsal</label>
+    <label class="form-label">NÃºmero de Dorsal</label>
     <input type="text" class="form-control" placeholder="Ej: 101" @oninput="OnBibChanged" disabled="@(!isBibEnabled)" />
   </div>
 
-  <!-- Botón Buscar -->
+  <!-- BotÃ³n Buscar -->
   <div class="d-flex justify-content-center mt-2">
     <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
             disabled="@(!CanSearch)"
@@ -126,10 +127,14 @@
     bibNumber = e.Value?.ToString();
   }
 
-  private Task OnSearch()
+  private void OnSearch()
   {
-    // Aquí se implementaría la navegación o la consulta para mostrar resultados individuales.
-    // Por ahora solo retornamos una tarea completada, ya que el requerimiento es de UI.
-    return Task.CompletedTask;
+    if (!CanSearch) return;
+
+    if (int.TryParse(selectedRaceId, out var raceId) && 
+        int.TryParse(bibNumber, out var bib))
+    {
+      Navigation.NavigateTo($"/rankings/bib/{raceId}/{bib}");
+    }
   }
 }

@@ -20,5 +20,6 @@ namespace SportEventManager.Core
         Task<List<TimeRecordResponseDTO>> GetTimeRecordsByRaceAsync(int raceId);
         Task<RaceStatsDTO> GetRaceStatsAsync(int raceId);
         Task<LiveParticipantDataDTO?> GetLiveParticipantDataByBibAsync(int raceId, int bibNumber);
+        Task<ParticipantRaceResultDTO?> GetParticipantRaceResultByBibAsync(int raceId, int bibNumber);
     }
 }
