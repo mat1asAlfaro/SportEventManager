@@ -49,6 +49,12 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<ITimeRecordRepository, TimeRecordRepository>();
 builder.Services.AddScoped<ITimingCalculationsService, TimingCalculationsService>();
+builder.Services.AddScoped<IEmailSender, DevEmailSenderService>();
+builder.Services.AddScoped<IVerificationService, OtpVerificationService>();
+builder.Services.AddScoped<IVerificationTokenRepository, VerificationTokenRepository>();
+
+builder.Services.AddSingleton<IChipReadingQueueService, ChipReadingQueueService>();
+builder.Services.AddHostedService(provider => (ChipReadingQueueService)provider.GetRequiredService<IChipReadingQueueService>());
 
 builder.Services.AddDbContextFactory<SportEventDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -90,14 +96,17 @@ app.MapHub<TimingHub>("/timingHub");
 // app.MapFallbackToPage("/");
 
 // ========================================
-// MINIMAL API para registro de tiempos RFID
+// MINIMAL API for RFID timing registration
 // ========================================
 
-// Endpoint principal: Registrar lectura de chip
 app.MapPost("/api/timing/register", async (
     ChipReadingDTO reading,
+<<<<<<< HEAD
     ITimeRecordRepository timeRecordRepository,
     RaceUpdateService raceUpdateService,
+=======
+    IChipReadingQueueService queueService,
+>>>>>>> origin/main
     ILogger<Program> logger) =>
 {
     try
@@ -108,8 +117,9 @@ app.MapPost("/api/timing/register", async (
             return Results.BadRequest(new { error = "ChipId and SplitId must be greater than 0" });
         }
 
-        var result = await timeRecordRepository.RegisterChipReadingAsync(reading);
+        await queueService.EnqueueAsync(reading);
 
+<<<<<<< HEAD
         if (result == null)
         {
             logger.LogWarning($"Failed to register chip reading: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
@@ -119,10 +129,20 @@ app.MapPost("/api/timing/register", async (
         await raceUpdateService.NotifyUpdate(reading.SplitId);
         logger.LogInformation($"Successfully registered chip reading: {result.TimeRecordId}");
         return Results.Ok(result);
+=======
+        logger.LogInformation($"Chip reading accepted and queued: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
+        return Results.Accepted("/api/timing/register", new 
+        { 
+            message = "Chip reading accepted and queued for processing",
+            chipId = reading.ChipId,
+            splitId = reading.SplitId,
+            queueSize = queueService.GetQueueCount()
+        });
+>>>>>>> origin/main
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error processing chip reading");
+        logger.LogError(ex, "Error queueing chip reading");
         return Results.Problem(
             detail: ex.Message,
             statusCode: 500,

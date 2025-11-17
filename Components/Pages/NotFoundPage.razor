@@ -1,0 +1,38 @@
+@page "/404"
+@page "/{*path}"
+@using Microsoft.AspNetCore.Http
+@rendermode InteractiveServer
+
+<div class="container-lg px-4 px-sm-5 px-lg-4 py-5 d-flex justify-content-center">
+  <div class="text-center notfound-card">
+    <div class="d-inline-flex align-items-center justify-content-center rounded-4 mb-4 notfound-icon bg-danger">
+      <span class="material-symbols-outlined fs-1 text-light">search_off</span>
+    </div>
+    <h1 class="fw-bold mb-2 text-primary">Página no encontrada</h1>
+    <p class="text-secondary mb-4">La ruta a la que intentas acceder no existe o fue movida.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+      <a class="btn btn-primary d-inline-flex align-items-center gap-2" href="/">
+        <span class="material-symbols-outlined fs-5">home</span>
+        Volver al inicio
+      </a>
+      <a class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" href="/admin">
+        <span class="material-symbols-outlined fs-5">login</span>
+        Ir a administración
+      </a>
+    </div>
+  </div>
+</div>
+
+@code {
+    [CascadingParameter] public HttpContext? HttpContext { get; set; }
+
+    [Parameter] public string? path { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (HttpContext != null)
+        {
+            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+        }
+    }
+}

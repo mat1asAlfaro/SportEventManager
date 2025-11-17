@@ -1,0 +1,131 @@
+@page "/rankings"
+@using SportEventManager.Components.Pages.Ranking
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@implements IDisposable
+
+
+<PageTitle>Clasificaciones</PageTitle>
+
+<!-- SECCIÓN - Encabezado -->
+<div class="rankings-section position-relative py-5 text-center">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="leaderboard-icon-border d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-3">
+      <span class="material-symbols-outlined fs-1">leaderboard</span>
+    </div>
+    <h1 class="fw-bold mb-2">Clasificaciones</h1>
+    <p class="text-secondary mb-4">Consulta resultados individuales o explora el leaderboard completo</p>
+
+    <!-- Toggle de pestañas -->
+    <div class="toggle-group d-inline-flex align-items-center">
+      <button type="button" class="segmented-button @(activeTab == ClassificationTab.ByBib ? "active" : string.Empty)" @onclick="() => SetTab(ClassificationTab.ByBib)" aria-controls="tabcontent-bybib" aria-selected="@(activeTab == ClassificationTab.ByBib)">
+        <span class="material-symbols-outlined fs-6">search</span>
+        <span>Resultados por Dorsal</span>
+      </button>
+      <button type="button" class="segmented-button @(activeTab == ClassificationTab.Leaderboard ? "active" : string.Empty)" @onclick="() => SetTab(ClassificationTab.Leaderboard)" aria-controls="tabcontent-leaderboard" aria-selected="@(activeTab == ClassificationTab.Leaderboard)">
+        <span class="material-symbols-outlined fs-6">military_tech</span>
+        <span>Leaderboard</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="container-lg px-4 px-sm-5 px-lg-4 mb-5">
+  <div class="rankings-panel p-4">
+    @if (activeTab == ClassificationTab.ByBib)
+    {
+      <div id="tabcontent-bybib">
+        <ByBibResults />
+      </div>
+    }
+    else if (activeTab == ClassificationTab.Leaderboard)
+    {
+      <div id="tabcontent-leaderboard">
+        <LeaderboardResults OnEventChange="HandleLeaderboardEventChange" OnRaceChange="HandleLeaderboardRaceChange" OnShowTableRequested="ShowLeaderboardTable" />
+      </div>
+    }
+  </div>
+
+  @if (activeTab == ClassificationTab.Leaderboard && CanShowLeaderboardTable && showTable)
+  {
+    <LeaderboardTable RaceId="@ParseRaceId(selectedLeaderboardRace)" />
+  }
+</div>
+
+@code {
+  private enum ClassificationTab { ByBib, Leaderboard }
+  private ClassificationTab activeTab = ClassificationTab.ByBib;
+
+  private string? selectedLeaderboardEvent;
+  private string? selectedLeaderboardRace;
+  private bool showTable;
+  private bool CanShowLeaderboardTable => !string.IsNullOrWhiteSpace(selectedLeaderboardEvent) && !string.IsNullOrWhiteSpace(selectedLeaderboardRace);
+
+  protected override void OnInitialized()
+  {
+    Navigation.LocationChanged += OnLocationChanged;
+    UpdateTabFromFragment();
+  }
+
+  private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+  {
+    var oldTab = activeTab;
+    UpdateTabFromFragment();
+    if (oldTab != activeTab)
+    {
+      StateHasChanged();
+    }
+  }
+
+  private void UpdateTabFromFragment()
+  {
+    var uri = new Uri(Navigation.Uri);
+    var fragment = uri.Fragment?.TrimStart('#').ToLowerInvariant();
+    activeTab = fragment switch
+    {
+      "leaderboard" => ClassificationTab.Leaderboard,
+      "bybib" => ClassificationTab.ByBib,
+      _ => ClassificationTab.ByBib
+    };
+  }
+
+  private void SetTab(ClassificationTab tab)
+  {
+    activeTab = tab;
+    showTable = false;
+    var frag = tab == ClassificationTab.ByBib ? "bybib" : "leaderboard";
+    var baseUri = Navigation.Uri.Split('#')[0];
+    // Actualiza el hash sin provocar scroll: no existe un elemento con ese id en el DOM
+    Navigation.NavigateTo($"{baseUri}#{frag}");
+  }
+
+  private void HandleLeaderboardEventChange(string? value)
+  {
+    selectedLeaderboardEvent = string.IsNullOrWhiteSpace(value) ? null : value;
+    showTable = false; 
+  }
+
+  private void HandleLeaderboardRaceChange(string? value)
+  {
+    selectedLeaderboardRace = string.IsNullOrWhiteSpace(value) ? null : value;
+    showTable = false;
+  }
+
+  private void ShowLeaderboardTable()
+  {
+    if (CanShowLeaderboardTable)
+    {
+      showTable = true;
+    }
+  }
+
+  private static int ParseRaceId(string? value)
+  {
+    return int.TryParse(value, out var id) ? id : 0;
+  }
+
+  public void Dispose()
+  {
+    Navigation.LocationChanged -= OnLocationChanged;
+  }
+}

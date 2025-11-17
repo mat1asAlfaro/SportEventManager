@@ -1,26 +1,57 @@
-﻿<div class="navbar_container">
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+<div class="navbar_container">
     <div class="logo">
-        <a href="/" class="links">
+        <a href="/" class="links" @onclick="CloseMenu">
             <img src="assets/icons/icon.svg" alt="Logo" />
         </a>
     </div>
 
-    <div class="nav_links ">
-        <a href="/" class="links">
+    <button class="menu-toggle" @onclick="ToggleMenu" aria-label="Abrir menú" aria-expanded="@isMenuOpen" aria-controls="primary-nav">
+        <span class="material-symbols-outlined">@((isMenuOpen ? "close" : "menu"))</span>
+    </button>
+
+    <nav id="primary-nav" class="nav_links @(isMenuOpen ? "open" : string.Empty)">
+        <a href="/" class="links" @onclick="CloseMenu">
             <span class="material-symbols-outlined fs-5">home</span>
             Inicio
         </a>
-        <a href="/registrations" class="links">
+        <a href="/registrations" class="links" @onclick="CloseMenu">
             <span class="material-symbols-outlined fs-5">group</span>
             Inscripciones
         </a>
-        <a href="/results" class="links">
-            <span class="material-symbols-outlined fs-5">bar_chart</span>
-            Resultados
+        <a href="/rankings" class="links" @onclick="CloseMenu">
+            <span class="material-symbols-outlined fs-5">leaderboard</span>
+            Clasificaciones
         </a>
+<<<<<<< HEAD
         <a href="/live" class="links">
             <span class="material-symbols-outlined fs-5">bigtop_updates</span>
             En Vivo
         </a>
     </div>
 </div>
+=======
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <a href="/admin/dashboard" class="links admin-link" @onclick="CloseMenu">
+                    <span class="material-symbols-outlined fs-5">dashboard</span>
+                    Administración (@context.User.Identity?.Name)
+                </a>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/admin" class="links admin-link" @onclick="CloseMenu">
+                    <span class="material-symbols-outlined fs-5">login</span>
+                    Panel de administración
+                </a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private bool isMenuOpen = false;
+    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+    private void CloseMenu() => isMenuOpen = false;
+}
+>>>>>>> origin/main

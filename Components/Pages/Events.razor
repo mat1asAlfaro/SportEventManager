@@ -19,6 +19,7 @@
 @inject IRaceRepository RaceRepository
 @inject ISplitRepository SplitRepository;
 @inject ICategoryRepository CategoryRepository;
+@inject NavigationManager Navigation
 @inject IJSRuntime JS
 @attribute [Authorize(Roles = "Admin")]
 
@@ -28,6 +29,15 @@
   <div class="container-lg px-4 px-sm-5 px-lg-4">
 
     @* Header *@
+    <div class="row">
+      <div class="col-12 col-md-6">
+        <button class="btn btn-secondary btn-lg d-flex align-items-center gap-2 bg-transparent border fs-6 fw-semibold"
+          @onclick="ReturnToDashboard">
+          <span class="material-symbols-outlined fs-5">keyboard_return</span>
+          Volver al Dashboard
+        </button>
+      </div>
+    </div>
     <div
       class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3"
       style="margin-bottom: 32px;">
@@ -185,6 +195,11 @@
 
     var categories = (await CategoryRepository.GetAllCategoriesAsync()).ToList();
     categoryNames = categories.Select(c => c.ExternalName!).ToList();
+  }
+
+  private void ReturnToDashboard()
+  {
+    Navigation.NavigateTo("/admin/dashboard");
   }
 
   private void ShowAddEventModal()

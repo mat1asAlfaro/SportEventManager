@@ -1,0 +1,90 @@
+/* Pantalla de meta */
+.finish-line-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, var(--color-main-background) 0%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 3vw, 2rem);
+}
+
+/* Elementos grandes */
+.spinner-xl {
+    width: 4rem;
+    height: 4rem;
+}
+
+.icon-error {
+    font-size: 5rem;
+}
+
+/* Nombre de la carrera */
+.race-name {
+    font-size: clamp(1.25rem, 3.5vw, 2.5rem);
+    letter-spacing: 0.2em;
+    opacity: 0.75;
+}
+
+/* Cronómetro principal */
+.main-timer {
+    font-size: clamp(3.5rem, 14vw, 9rem);
+    line-height: 1;
+    letter-spacing: 0.05em;
+    color: var(--color-primary);
+    text-shadow: 0 0 0.5rem rgba(99, 102, 241, 0.4);
+}
+
+/* Corredor actual */
+.runner-name {
+    font-size: clamp(1.75rem, 7vw, 5rem);
+    letter-spacing: 0.1em;
+}
+
+.runner-bib {
+    font-size: clamp(1.75rem, 7vw, 5rem);
+    color: var(--color-primary);
+    text-shadow: 0 0 0.5rem rgba(99, 102, 241, 0.3);
+}
+
+/* Estado de espera */
+.waiting-state {
+    opacity: 0.5;
+}
+
+.waiting-icon {
+    font-size: clamp(3rem, 8vw, 6rem);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 0.5; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+/* Lista de corredores anteriores */
+.previous-runners {
+    max-width: 50rem;
+}
+
+/* Tamaños de texto en las filas */
+.runner-name-small,
+.runner-bib-small,
+.runner-time {
+    font-size: clamp(0.95rem, 2.2vw, 1.35rem);
+}
+
+/* Responsive */
+@media (max-width: 48rem) {
+    .runner-name-small,
+    .runner-bib-small,
+    .runner-time {
+        text-align: center;
+    }
+}

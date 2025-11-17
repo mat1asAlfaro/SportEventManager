@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251114182624_AddVerificationTokens")]
+    partial class AddVerificationTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -901,41 +904,27 @@ namespace SportEventManager.Migrations
                         new
                         {
                             SplitId = 1,
-                            KmMark = 0.0,
-                            RaceId = 1,
-                            SplitName = "Km 0"
-                        },
-                        new
-                        {
-                            SplitId = 2,
                             KmMark = 5.0,
                             RaceId = 1,
                             SplitName = "Km 5"
                         },
                         new
                         {
-                            SplitId = 3,
+                            SplitId = 2,
                             KmMark = 10.0,
                             RaceId = 1,
                             SplitName = "Km 10"
                         },
                         new
                         {
-                            SplitId = 4,
-                            KmMark = 0.0,
-                            RaceId = 2,
-                            SplitName = "Km 0"
-                        },
-                        new
-                        {
-                            SplitId = 5,
+                            SplitId = 3,
                             KmMark = 2.5,
                             RaceId = 2,
                             SplitName = "Km 2.5"
                         },
                         new
                         {
-                            SplitId = 6,
+                            SplitId = 4,
                             KmMark = 5.0,
                             RaceId = 2,
                             SplitName = "Km 5"
@@ -979,47 +968,31 @@ namespace SportEventManager.Migrations
                             ChipId = 1,
                             RaceId = 1,
                             SplitId = 1,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 0, 0, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 5, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             TimeRecordId = 2,
-                            ChipId = 1,
+                            ChipId = 2,
                             RaceId = 1,
                             SplitId = 2,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 20, 30, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 10, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             TimeRecordId = 3,
-                            ChipId = 1,
-                            RaceId = 1,
+                            ChipId = 3,
+                            RaceId = 2,
                             SplitId = 3,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 40, 40, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 15, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             TimeRecordId = 4,
-                            ChipId = 3,
+                            ChipId = 4,
                             RaceId = 2,
                             SplitId = 4,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            TimeRecordId = 5,
-                            ChipId = 3,
-                            RaceId = 2,
-                            SplitId = 5,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 4, 30, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            TimeRecordId = 6,
-                            ChipId = 3,
-                            RaceId = 2,
-                            SplitId = 6,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 8, 40, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 20, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -1100,13 +1073,11 @@ namespace SportEventManager.Migrations
 
             modelBuilder.Entity("SportEventManager.Models.Race", b =>
                 {
-                    b.HasOne("SportEventManager.Models.Event", "Event")
+                    b.HasOne("SportEventManager.Models.Event", null)
                         .WithMany("Races")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("SportEventManager.Models.RaceCategory", b =>

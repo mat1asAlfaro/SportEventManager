@@ -1,0 +1,647 @@
+@using SportEventManager.Models
+@using SportEventManager.DTOs
+@using SportEventManager.Core
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@inherits LayoutComponentBase
+@implements IDisposable
+
+@inject IParticipantRepository ParticipantRepository
+@inject IRegistrationRepository RegistrationRepository
+@inject IVerificationService VerificationService
+@inject ILogger<RegisterParticipantModal> Logger
+
+<div class="modal fade @(IsVisible ? "show d-block" : "") custom-modal-overlay" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Completar datos del participante</h5>
+        <span class="material-symbols-outlined fs-5 ms-auto" @onclick="Close" role="button">close</span>
+      </div>
+
+      <EditForm Model="@EditableParticipant" OnValidSubmit="@Save" OnInvalidSubmit="@OnInvalidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="modal-body">
+          @if (!string.IsNullOrEmpty(ErrorMessage))
+          {
+            <div class="alert alert-error mb-3">@ErrorMessage</div>
+          }
+          @if (!string.IsNullOrEmpty(InfoMessage))
+          {
+            <div class="@GetInfoAlertClass() mb-3">@InfoMessage</div>
+          }
+
+          <div class="row">
+            <!-- Columna izquierda -->
+            <div class="col-12 col-lg-5">
+              <div class="mb-2 text-secondary small">Evento: <span class="text-primary">@EventName</span></div>
+              <div class="mb-3 text-secondary small">Carrera: <span class="text-primary">@RaceName</span></div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Documento</label>
+                <input class="form-control" maxlength="8" placeholder="12345678" inputmode="numeric"
+                       @bind="DocumentNumberInput" @bind:after="OnDocumentChanged"
+                       required disabled="@(IsFormLocked || IsOtpVerified || OtpSent)" />
+                <div class="form-text text-secondary">Ingresa tu número de documento para comenzar.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Email</label>
+                <input type="email" class="form-control" placeholder="nombre@correo.com"
+                       @bind="EmailForOtp"
+                       required
+                       disabled="@(IsFormLocked || IsOtpVerified || (OtpSent && !IsOtpVerified && ResendSeconds > 0))" />
+
+                <div class="mt-3 d-flex flex-wrap align-items-center gap-2 justify-content-between w-200">
+                  @if (!IsOtpVerified)
+                  {
+                    <button type="button" class="btn btn-primary fw-semibold d-flex align-items-center gap-2"
+                            @onclick="SendOtp"
+                            disabled="@(IsFormLocked || IsSaving || IsSendingOtp || string.IsNullOrWhiteSpace(EmailForOtp) || string.IsNullOrWhiteSpace(DocumentNumberInput) || (OtpSent && ResendSeconds > 0))">
+                      @if (IsSendingOtp)
+                      {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>Enviando...</span>
+                      }
+                      else if (OtpSent && ResendSeconds > 0)
+                      {
+                        <span class="material-symbols-outlined fs-6">schedule</span>
+                        <span>Reenviar en @ResendSeconds s</span>
+                      }
+                      else
+                      {
+                        <span class="material-symbols-outlined fs-6">mark_email_unread</span>
+                        <span>Obtener código</span>
+                      }
+                    </button>
+                  }
+
+                  @if (OtpSent && !IsOtpVerified)
+                  {
+                    <input class="form-control otp-code-input" placeholder="Código (6 dígitos)" @bind="OtpCode" />
+                    <button type="button" class="btn btn-success fw-semibold d-flex align-items-center gap-2"
+                            @onclick="VerifyOtp"
+                            disabled="@(string.IsNullOrWhiteSpace(OtpCode) || IsSaving)">
+                      <span class="material-symbols-outlined fs-6">task_alt</span>
+                      <span>Validar</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Divisor vertical -->
+            <div class="d-none d-lg-block col-lg-1">
+              <div class="h-100 border-start opacity-50"></div>
+            </div>
+
+            <!-- Columna derecha -->
+            <div class="col-12 col-lg-6">
+              @if (!IsOtpVerified)
+              {
+                <!-- Panel informativo estilo how-it-works (compacto) -->
+                <div class="p-3 rounded-3 border how-it-works-panel">
+                  <h6 class="fw-semibold mb-2 d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined">verified_user</span>
+                    ¿Cómo validar tu email?
+                  </h6>
+                  <p class="text-secondary small mb-3">Sigue estos pasos para continuar con tu inscripción:</p>
+
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex align-items-start gap-2">
+                      <div class="step-number me-2">1</div>
+                      <div class="small">Ingresa tu documento y correo electrónico.</div>
+                    </div>
+                    <div class="d-flex align-items-start gap-2">
+                      <div class="step-number me-2">2</div>
+                      <div class="small">Presiona <strong>Obtener código</strong> y revisa tu email para obtener el código de 6 dígitos.</div>
+                    </div>
+                    <div class="d-flex align-items-start gap-2">
+                      <div class="step-number me-2">3</div>
+                      <div class="small">Ingresa el código y valida. Se habilitarán los campos para completar tu inscripción.</div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info mt-3 p-2 small mb-0">
+                    <span class="material-symbols-outlined align-middle me-1">schedule</span>
+                    El código vence en <strong>10 minutos</strong>. Si expira, podrás solicitar uno nuevo.
+                  </div>
+                </div>
+              }
+              else
+              {
+                <div class="row g-3">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Nombre</label>
+                    <input class="form-control" placeholder="Ej: Juan" @bind="EditableParticipant.FirstName" required disabled="@(!AreFieldsEditable)" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Apellido</label>
+                    <input class="form-control" placeholder="Ej: Pérez" @bind="EditableParticipant.LastName" required disabled="@(!AreFieldsEditable)" />
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Email (verificado)</label>
+                    <input type="email" class="form-control" @bind="EditableParticipant.Email" required disabled="true" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Fecha de nacimiento</label>
+                    <input type="date" class="form-control" min="@MinBirthDate" max="@MaxBirthDate"
+                           @bind="EditableParticipant.Birthdate" required disabled="@(!AreFieldsEditable)" />
+                  </div>
+                </div>
+
+                <div class="mt-3 mb-2">
+                  <label class="form-label small fw-semibold">Género</label>
+                  <div class="select-wrapper">
+                    <InputSelect TValue="Gender?" class="form-select" @bind-Value="EditableParticipant.Gender" disabled="@(!AreFieldsEditable)">
+                      <option value="">Selecciona un género</option>
+                      @foreach (var g in Enum.GetValues(typeof(Gender)).Cast<Gender>())
+                      {
+                        <option value="@g">@GetGenderDisplayName(g)</option>
+                      }
+                    </InputSelect>
+                    <span class="material-symbols-outlined select-icon">expand_more</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary fw-semibold" @onclick="Close">
+            <span class="material-symbols-outlined me-2 fs-6">cancel</span>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary fw-semibold"
+                  disabled="@(IsSaving || IsSearching || IsFormLocked || !IsOtpVerified)">
+            <span class="material-symbols-outlined me-2 fs-6">save</span>@(IsSaving ? "Guardando..." : (IsSearching ? "Buscando..." : "Confirmar inscripción"))
+          </button>
+        </div>
+      </EditForm>
+    </div>
+  </div>
+</div>
+
+@code {
+  [Parameter] public EventCallback<Registration> OnRegistered { get; set; }
+  [Parameter] public EventCallback OnCancel { get; set; }
+
+  private bool IsVisible { get; set; }
+  private bool IsSaving { get; set; }
+  private bool IsSearching { get; set; }
+  private bool IsFormLocked { get; set; }
+  private string? ErrorMessage { get; set; }
+  private string? InfoMessage { get; set; }
+  private bool IsExistingParticipant { get; set; }
+
+  private int RaceId { get; set; }
+  private string RaceName { get; set; } = string.Empty;
+  private string EventName { get; set; } = string.Empty;
+  private int EventId { get; set; }
+  private List<RaceCategoryDTO> RaceCategories { get; set; } = new();
+
+  private Participant EditableParticipant { get; set; } = new();
+
+  // OTP state
+  private string DocumentNumberInput { get; set; } = string.Empty;
+  private string? EmailForOtp { get; set; }
+  private string? OtpCode { get; set; }
+  private bool OtpSent { get; set; }
+  private bool IsOtpVerified { get; set; }
+  private int? ExistingParticipantId { get; set; }
+  private string? ExistingEmail { get; set; }
+  private bool IsSendingOtp { get; set; }
+  private int ResendSeconds { get; set; }
+  private System.Threading.Timer? _otpResendTimer;
+
+  private bool AreFieldsEditable => IsOtpVerified && !IsFormLocked;
+
+  private readonly System.Threading.SemaphoreSlim _repoLock = new(1, 1);
+
+  private string MinBirthDate => DateTime.Today.AddYears(-95).ToString("yyyy-MM-dd");
+  private string MaxBirthDate => DateTime.Today.ToString("yyyy-MM-dd");
+
+  public void Show(EventDTO ev, RaceDTO race)
+  {
+    EventName = ev.Name ?? string.Empty;
+    RaceName = race.RaceName ?? race.RaceName ?? string.Empty;
+    EventId = ev.EventId;
+    RaceId = race.RaceId;
+    RaceCategories = race.RaceCategories?.ToList() ?? new List<RaceCategoryDTO>();
+
+    ErrorMessage = null;
+    InfoMessage = null;
+    IsExistingParticipant = false;
+    IsSaving = false;
+    IsSearching = false;
+    IsFormLocked = false;
+    IsOtpVerified = false;
+    OtpSent = false;
+    EmailForOtp = null;
+    OtpCode = null;
+    ExistingParticipantId = null;
+    ExistingEmail = null;
+    IsSendingOtp = false;
+    ResendSeconds = 0;
+    _otpResendTimer?.Dispose();
+    _otpResendTimer = null;
+
+    EditableParticipant = new Participant
+    {
+      Birthdate = DateTime.Today.AddYears(-95)
+    };
+    DocumentNumberInput = string.Empty;
+
+    if (!RaceCategories.Any())
+    {
+      ErrorMessage = "La carrera no tiene categorías configuradas. No es posible completar la inscripción.";
+      IsFormLocked = true;
+    }
+
+    IsVisible = true;
+    StateHasChanged();
+  }
+
+  private async Task OnDocumentChanged()
+  {
+    if (IsFormLocked) return;
+
+    ErrorMessage = null;
+    InfoMessage = null;
+
+    var doc = DocumentNumberInput?.Trim();
+    if (string.IsNullOrWhiteSpace(doc))
+    {
+      IsExistingParticipant = false;
+      ExistingParticipantId = null;
+      ExistingEmail = null;
+      return;
+    }
+
+    await _repoLock.WaitAsync();
+    IsSearching = true;
+    try
+    {
+      var existing = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+      if (existing != null)
+      {
+        // No exponer datos aún
+        IsExistingParticipant = true;
+        ExistingParticipantId = existing.ParticipantId;
+        ExistingEmail = existing.Email;
+        EditableParticipant.DocumentNumber = doc;
+        InfoMessage = "Participante encontrado. Verifica tu email para continuar.";
+      }
+      else
+      {
+        IsExistingParticipant = false;
+        ExistingParticipantId = null;
+        ExistingEmail = null;
+        EditableParticipant = new Participant
+        {
+          DocumentNumber = doc,
+          Birthdate = DateTime.Today.AddYears(-95)
+        };
+        InfoMessage = "Nuevo participante. Verifica tu email para continuar.";
+      }
+    }
+    finally
+    {
+      IsSearching = false;
+      _repoLock.Release();
+      StateHasChanged();
+    }
+  }
+
+  private async Task SendOtp()
+  {
+    try
+    {
+      ErrorMessage = null;
+      InfoMessage = null;
+
+      if (string.IsNullOrWhiteSpace(DocumentNumberInput))
+      {
+        ErrorMessage = "Ingresa tu documento antes de solicitar el código.";
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(EmailForOtp))
+      {
+        ErrorMessage = "Ingresa tu email para enviar el código.";
+        return;
+      }
+
+      // Si existe participante, el email debe coincidir con el registrado.
+      if (IsExistingParticipant && !string.Equals(EmailForOtp?.Trim(), ExistingEmail?.Trim(), StringComparison.OrdinalIgnoreCase))
+      {
+        ErrorMessage = "El email no coincide con el registrado para este documento.";
+        return;
+      }
+
+      IsSendingOtp = true;
+      var purpose = $"Registration:{EventId}:{RaceId}";
+      await VerificationService.SendOtpAsync(EmailForOtp!.Trim(), purpose, ExistingParticipantId);
+
+      OtpSent = true;
+      StartResendCountdown(60);
+      InfoMessage = "Código enviado. Revisa tu correo e ingrésalo para continuar.";
+    }
+    catch (Exception ex)
+    {
+      ErrorMessage = "No fue posible enviar el código. Inténtalo nuevamente.";
+      Logger?.LogError(ex, "Error enviando OTP");
+    }
+    finally
+    {
+      IsSendingOtp = false;
+    }
+  }
+
+  private void StartResendCountdown(int seconds)
+  {
+    ResendSeconds = seconds;
+    _otpResendTimer?.Dispose();
+    _otpResendTimer = new System.Threading.Timer(async _ =>
+    {
+      if (ResendSeconds > 0)
+      {
+        ResendSeconds--;
+        await InvokeAsync(StateHasChanged);
+      }
+      else
+      {
+        _otpResendTimer?.Dispose();
+        _otpResendTimer = null;
+      }
+    }, null, 1000, 1000);
+  }
+
+  private async Task VerifyOtp()
+  {
+    try
+    {
+      ErrorMessage = null;
+      InfoMessage = null;
+
+      if (string.IsNullOrWhiteSpace(EmailForOtp) || string.IsNullOrWhiteSpace(OtpCode))
+      {
+        ErrorMessage = "Debes ingresar el email y el código recibido.";
+        return;
+      }
+
+      var purpose = $"Registration:{EventId}:{RaceId}";
+      var ok = await VerificationService.ValidateOtpAsync(EmailForOtp.Trim(), purpose, OtpCode.Trim());
+      if (!ok)
+      {
+        ErrorMessage = "Código inválido o expirado.";
+        return;
+      }
+
+      // OTP válido
+      IsOtpVerified = true;
+      ResendSeconds = 0;
+      _otpResendTimer?.Dispose();
+      _otpResendTimer = null;
+      EditableParticipant.Email = EmailForOtp.Trim();
+
+      // Si ya existía, recién ahora cargamos los datos para edición
+      if (IsExistingParticipant && ExistingParticipantId.HasValue)
+      {
+        var p = await ParticipantRepository.GetParticipantByDocumentAsync(DocumentNumberInput.Trim());
+        if (p != null)
+        {
+          EditableParticipant = p;
+        }
+      }
+
+      InfoMessage = "Email verificado. Completa los datos y confirma la inscripción.";
+    }
+    catch (Exception ex)
+    {
+      ErrorMessage = "No fue posible validar el código. Inténtalo nuevamente.";
+      Logger?.LogError(ex, "Error validando OTP");
+    }
+  }
+
+  private async Task Save()
+  {
+    if (IsFormLocked) return;
+
+    if (!IsOtpVerified)
+    {
+      ErrorMessage = "Debes verificar tu email antes de confirmar la inscripción.";
+      return;
+    }
+
+    if (!RaceCategories.Any())
+    {
+      ErrorMessage = "La carrera no tiene categorías configuradas.";
+      IsFormLocked = true;
+      return;
+    }
+
+    if (string.IsNullOrWhiteSpace(EditableParticipant.DocumentNumber ?? DocumentNumberInput))
+    {
+      ErrorMessage = "Debes ingresar el documento.";
+      return;
+    }
+
+    if (EditableParticipant.Gender is null)
+    {
+      ErrorMessage = "Debe seleccionar un género.";
+      return;
+    }
+
+    try
+    {
+      IsSaving = true;
+      ErrorMessage = null;
+      InfoMessage = null;
+
+      await _repoLock.WaitAsync();
+      try
+      {
+        var doc = (EditableParticipant.DocumentNumber ?? DocumentNumberInput)!.Trim();
+        var byDoc = await ParticipantRepository.GetParticipantByDocumentAsync(doc);
+
+        if (byDoc != null)
+        {
+          if (await RegistrationRepository.ExistsByParticipantAndRaceAsync(byDoc.ParticipantId, RaceId))
+          {
+            ErrorMessage = "Ya estás inscripto/a en esta carrera.";
+            IsSaving = false;
+            Logger?.LogInformation("Intento duplicado de inscripción. ParticipantId={ParticipantId}, RaceId={RaceId}", byDoc.ParticipantId, RaceId);
+            return;
+          }
+
+          var existingInEvent = await RegistrationRepository.GetParticipantRegistrationInEventAsync(byDoc.ParticipantId, EventId);
+          if (existingInEvent != null)
+          {
+            InfoMessage = $"Ya ta inscribiste en la carrera '{existingInEvent.Race?.Name}' de este evento.";
+            ErrorMessage = "No es posible inscribirse a dos carreras del mismo evento.";
+            IsSaving = false;
+            Logger?.LogInformation("Participante ya inscripto en otra carrera del mismo evento. ParticipantId={ParticipantId}, EventId={EventId}", byDoc.ParticipantId, EventId);
+            return;
+          }
+        }
+
+        // Elegibilidad
+        var age = CalculateAge(EditableParticipant.Birthdate);
+        var categoryId = SelectEligibleCategoryId(age, EditableParticipant.Gender!.Value);
+        if (categoryId is null)
+        {
+          ErrorMessage = "No es posible inscribirte a esta carrera porque no es de tu categoría.";
+          IsSaving = false;
+          Logger?.LogInformation("Categoría no encontrada para participante. Edad={Age}, Género={Gender}, RaceId={RaceId}", age, EditableParticipant.Gender, RaceId);
+          return;
+        }
+
+        // Persistir participante
+        if (byDoc != null)
+        {
+          byDoc.FirstName = EditableParticipant.FirstName;
+          byDoc.LastName = EditableParticipant.LastName;
+          byDoc.Email = EditableParticipant.Email; // ya verificado
+          byDoc.DocumentNumber = doc;
+          byDoc.Birthdate = EditableParticipant.Birthdate;
+          byDoc.Gender = EditableParticipant.Gender;
+
+          await ParticipantRepository.UpdateParticipantAsync(byDoc);
+          EditableParticipant = byDoc;
+        }
+        else
+        {
+          EditableParticipant.DocumentNumber = doc;
+          await ParticipantRepository.AddParticipantAsync(EditableParticipant);
+        }
+
+        // Crear inscripción
+        var registration = new Registration
+        {
+          ParticipantId = EditableParticipant.ParticipantId,
+          RaceId = RaceId,
+          CategoryId = categoryId.Value,
+          Status = "Pending"
+        };
+
+        await RegistrationRepository.AddRegistrationAsync(registration);
+
+        Logger?.LogInformation("Inscripción creada correctamente. RegistrationId={RegistrationId}, ParticipantId={ParticipantId}, RaceId={RaceId}, CategoryId={CategoryId}",
+          registration.RegistrationId, registration.ParticipantId, registration.RaceId, registration.CategoryId);
+
+        IsVisible = false;
+        IsSaving = false;
+
+        if (OnRegistered.HasDelegate)
+        {
+          await OnRegistered.InvokeAsync(registration);
+        }
+      }
+      finally
+      {
+        _repoLock.Release();
+      }
+    }
+    catch (InvalidOperationException ex)
+    {
+      IsSaving = false;
+      ErrorMessage = ex.Message;
+      Logger?.LogWarning(ex, "InvalidOperationException al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}", EditableParticipant.DocumentNumber ?? DocumentNumberInput, RaceId, EventId);
+    }
+    catch (ArgumentException ex)
+    {
+      IsSaving = false;
+      ErrorMessage = ex.Message;
+      Logger?.LogWarning(ex, "ArgumentException al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}", EditableParticipant.DocumentNumber ?? DocumentNumberInput, RaceId, EventId);
+    }
+    catch (Exception ex)
+    {
+      IsSaving = false;
+      ErrorMessage = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+      Logger?.LogError(ex, "Error inesperado al guardar inscripción. Doc={Document}, RaceId={RaceId}, EventId={EventId}", EditableParticipant.DocumentNumber ?? DocumentNumberInput, RaceId, EventId);
+    }
+  }
+
+  private static int CalculateAge(DateTime dob)
+  {
+    var today = DateTime.Today;
+    var age = today.Year - dob.Year;
+    if (dob.Date > today.AddYears(-age)) age--;
+    return age;
+  }
+
+  private int? SelectEligibleCategoryId(int age, Gender gender)
+  {
+    if (RaceCategories == null || RaceCategories.Count == 0)
+      return null;
+
+    // Mapear género del participante a símbolo de categoría
+    string genderSymbol = gender switch
+    {
+      Gender.Male => "M",
+      Gender.Female => "F",
+      _ => string.Empty // 'Other' solo matchea con mixtas "X"
+    };
+
+    var candidates = RaceCategories
+      .Where(rc => rc.Category != null)
+      .Where(rc =>
+        (rc.Category!.Gender == genderSymbol || rc.Category!.Gender == "X")
+        && (!rc.Category!.MinAge.HasValue || age >= rc.Category!.MinAge.Value)
+        && (!rc.Category!.MaxAge.HasValue || age <= rc.Category!.MaxAge.Value)
+      )
+      .ToList();
+
+    if (!candidates.Any())
+      return null;
+
+    // Preferir categorías específicas de género (M/F) sobre mixtas (X)
+    var preferred = candidates.FirstOrDefault(c => c.Category!.Gender != "X") ?? candidates.First();
+    return preferred.CategoryId;
+  }
+
+  private static string GetGenderDisplayName(Gender g)
+  {
+    var mi = typeof(Gender).GetMember(g.ToString()).FirstOrDefault();
+    var display = mi?.GetCustomAttribute<DisplayAttribute>();
+    return display?.Name ?? g.ToString();
+  }
+
+  private string GetInfoAlertClass()
+  {
+    if (!string.IsNullOrWhiteSpace(InfoMessage))
+    {
+      if (InfoMessage.Contains("Participante encontrado", StringComparison.OrdinalIgnoreCase)
+          || InfoMessage.Contains("Código enviado", StringComparison.OrdinalIgnoreCase)
+          || InfoMessage.Contains("Email verificado", StringComparison.OrdinalIgnoreCase))
+      {
+        return "alert alert-success"; // verde
+      }
+    }
+
+    return "alert alert-warning"; // por defecto (naranja)
+  }
+
+  private async Task Close()
+  {
+    IsVisible = false;
+    await OnCancel.InvokeAsync();
+  }
+
+  private void OnInvalidSubmit()
+  {
+    // solo refrescar para mostrar validaciones
+    StateHasChanged();
+  }
+
+  public void Dispose()
+  {
+    _otpResendTimer?.Dispose();
+    _otpResendTimer = null;
+  }
+}

@@ -1,0 +1,71 @@
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  backdrop-filter: blur(6px);
+  transition: box-shadow .3s ease, transform .3s ease;
+}
+.login-card:hover {
+  box-shadow: 0 12px 36px -8px rgba(0,0,0,.45);
+  transform: translateY(-2px);
+}
+
+.login-icon {
+  width: 4.25rem;
+  height: 4.25rem;
+  box-shadow: 0 6px 18px -4px rgba(0,0,0,0.4);
+}
+
+.input-group-text {
+  background: var(--color-input-background, #1c1f24);
+  border-color: var(--color-border);
+  color: var(--color-secondary-text);
+  font-size: .85rem;
+}
+
+.login-card .form-label {
+  color: var(--color-primary-text);
+}
+
+.login-card .form-control {
+  background-color: var(--color-input-background, #1c1f24);
+  border-color: var(--color-border);
+  color: var(--color-primary-text);
+}
+.login-card .form-control::placeholder {
+  color: var(--color-secondary-text);
+  opacity: .65;
+}
+.login-card .form-control:focus {
+  box-shadow: 0 0 0 0.15rem rgba(100,150,250,.25);
+  border-color: var(--color-primary);
+}
+
+.login-card .btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #6c5ce7 100%);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 16px -4px rgba(108,92,231,.5);
+}
+.login-card .btn-primary:hover {
+  filter: brightness(1.08);
+}
+.login-card .btn-primary:active {
+  transform: scale(.97);
+}
+.login-card .btn-primary:disabled {
+  opacity: .7;
+}
+
+.login-card .alert-danger {
+  background-color: rgba(220,53,69,0.15);
+  border: 1px solid rgba(220,53,69,0.3);
+  color: var(--bs-danger);
+  border-radius: .6rem;
+}
+
+.validation-message, .field-validation-error, .input-validation-error span {
+  font-size: .75rem;
+  color: var(--bs-danger);
+}

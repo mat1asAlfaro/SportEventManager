@@ -1,5 +1,4 @@
 using System;
-
 namespace SportEventManager.DTOs
 {
     public class LiveTimeUpdateDTO
@@ -9,9 +8,11 @@ namespace SportEventManager.DTOs
         public string? SplitName { get; set; }
         public double? KmMark { get; set; }
         public string? ParticipantName { get; set; }
+        public int ChipId { get; set; }
         public string? ChipSerialNumber { get; set; }
         public DateTime Timestamp { get; set; }
         public int Position { get; set; } // Posición en ese split
         public TimeSpan? TimeFromStart { get; set; }
+        public int? BibNumber { get; set; }
     }
 }

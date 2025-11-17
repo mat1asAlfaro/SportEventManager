@@ -1,0 +1,402 @@
+@page "/finish-line/{RaceId:int}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@using SportEventManager.Data.Persistence
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject IRaceRepository RaceRepository
+@inject IDbContextFactory<SportEventDbContext> DbContextFactory
+@inject ISplitRepository SplitRepository
+@inject IRegistrationRepository RegistrationRepository
+@implements IAsyncDisposable
+
+<PageTitle>Pantalla de Meta</PageTitle>
+
+<div class="finish-line-screen">
+    @if (_isLoading)
+    {
+        <div class="d-flex flex-column justify-content-center align-items-center text-light">
+            <div class="spinner-border spinner-xl" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-4 fs-4">Preparando pantalla de meta...</p>
+        </div>
+    }
+    else if (_hasError)
+    {
+        <div class="d-flex flex-column justify-content-center align-items-center text-light">
+            <span class="material-symbols-outlined text-danger mb-3 icon-error">error</span>
+            <h2 class="text-danger mb-3">Error</h2>
+            <p class="mb-4">@_errorMessage</p>
+            <button class="btn btn-light btn-lg d-inline-flex align-items-center gap-2" @onclick="LoadData">
+                <span class="material-symbols-outlined">refresh</span>
+                Reintentar
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="meta-container w-100 text-center">
+            <div class="mb-4 mb-md-5">
+                <h1 class="race-name text-uppercase fw-bold text-light mb-0">@_raceName</h1>
+            </div>
+
+            <div class="main-timer fw-bold font-monospace mb-4 mb-md-5">
+                @_elapsedRaceTime
+            </div>
+
+            @if (_lastFinisher != null)
+            {
+                <div class="current-runner mb-4 mb-md-5">
+                    <div class="runner-name text-uppercase fw-bold text-light mb-3">@_lastFinisher.ParticipantName</div>
+                    <div class="runner-bib fw-bold text-primary">
+                        # @_lastFinisher.BibNumber
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="waiting-state my-4 my-md-5">
+                    <span class="material-symbols-outlined waiting-icon text-light mb-3 d-block">timer</span>
+                    <p class="text-secondary fs-4 mb-0">Esperando corredores...</p>
+                </div>
+            }
+
+            @if (_finishers.Count > 1)
+            {
+                <div class="previous-runners mt-4 mt-md-5 mx-auto">
+                    @foreach (var finisher in _finishers.OrderByDescending(f => f.Timestamp).Skip(1).Take(3))
+                    {
+                        <div class="card bg-dark border-secondary mb-3">
+                            <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 py-3 px-4">
+                                <div class="d-flex flex-column flex-md-row align-items-center gap-2 gap-md-3 flex-grow-1">
+                                    <span class="fw-semibold text-light text-truncate runner-name-small">@finisher.ParticipantName</span>
+                                    <span class="fw-bold text-primary runner-bib-small">
+                                        # @finisher.BibNumber
+                                    </span>
+                                </div>
+                                <div class="fw-bold text-secondary font-monospace runner-time">@finisher.ElapsedTime</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int RaceId { get; set; }
+
+    private HubConnection? _hubConnection;
+    private bool _isLoading = true;
+    private bool _hasError = false;
+    private string _errorMessage = "";
+    private System.Threading.Timer? _raceTimer;
+    private bool _disposed = false;
+
+    private string? _raceName;
+    private DateTime? _raceStartTime;
+    private int? _prefinishSplitId;
+    private string _elapsedRaceTime = "00:00:00";
+
+    private List<FinisherData> _finishers = new();
+    private FinisherData? _lastFinisher;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeRace();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CleanupResources();
+        await InitializeRace();
+    }
+
+    private async Task InitializeRace()
+    {
+        await LoadData();
+        if (!_hasError)
+        {
+            StartRaceTimer();
+            await ConnectToSignalR();
+        }
+    }
+
+    private async Task CleanupResources()
+    {
+        if (_raceTimer != null)
+        {
+            await _raceTimer.DisposeAsync();
+            _raceTimer = null;
+        }
+
+        if (_hubConnection is not null)
+        {
+            try
+            {
+                await _hubConnection.StopAsync();
+                await _hubConnection.DisposeAsync();
+                _hubConnection = null;
+            }
+            catch { }
+        }
+    }
+
+    private void StartRaceTimer()
+    {
+        _raceTimer = new System.Threading.Timer(async _ =>
+        {
+            if (_disposed) return;
+
+            if (_raceStartTime.HasValue)
+            {
+                var elapsed = DateTime.Now - _raceStartTime.Value;
+                _elapsedRaceTime = $"{elapsed:hh\\:mm\\:ss}";
+
+                try
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch (ObjectDisposedException)
+                {
+                    _raceTimer?.Dispose();
+                }
+            }
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _isLoading = true;
+            _hasError = false;
+
+            var race = await RaceRepository.GetRaceDTOByIdAsync(RaceId);
+            if (race == null)
+            {
+                _hasError = true;
+                _errorMessage = "No se encontró la carrera.";
+                return;
+            }
+
+            _raceName = race.RaceName;
+            _raceStartTime = race.StartTime;
+
+            var splits = race.Splits?.OrderBy(s => s.KmMark).ToList();
+            if (splits == null || splits.Count < 2)
+            {
+                _hasError = true;
+                _errorMessage = "La carrera debe tener al menos 2 puntos de control (inicio y meta).";
+                return;
+            }
+
+            _prefinishSplitId = splits[splits.Count - 2].SplitId;
+
+            await LoadExistingFinishers(race);
+
+            _isLoading = false;
+        }
+        catch
+        {
+            _hasError = true;
+            _errorMessage = "Error al cargar los datos de la carrera.";
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadExistingFinishers(RaceDTO race)
+    {
+        if (_prefinishSplitId == null || _raceStartTime == null) return;
+
+        _finishers.Clear();
+
+        var prefinishRecords = race.TimeRecords?
+        .Where(tr => tr.SplitId == _prefinishSplitId.Value)
+        .OrderBy(tr => tr.Timestamp)
+        .ToList() ?? new List<TimeRecordResponseDTO>();
+
+        foreach (var timeRecord in prefinishRecords)
+        {
+            var registration = race.Registrations?.FirstOrDefault(r =>
+            r.RegistrationChips?.Any(rc => rc.ChipId == timeRecord.ChipId) ?? false);
+
+            if (registration == null) continue;
+
+            var participantName = registration.ParticipantName ?? $"Participante #{registration.ParticipantId}";
+            var timestampLocal = timeRecord.Timestamp.Kind == DateTimeKind.Utc
+            ? timeRecord.Timestamp.ToLocalTime()
+            : timeRecord.Timestamp;
+
+            var elapsed = timestampLocal - _raceStartTime.Value;
+            var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
+
+            _finishers.Add(new FinisherData
+            {
+                BibNumber = registration.BibNumber ?? 0,
+                ParticipantName = participantName,
+                ElapsedTime = elapsedTime,
+                Timestamp = timeRecord.Timestamp
+            });
+        }
+
+        _lastFinisher = _finishers.LastOrDefault();
+    }
+
+    private async Task ConnectToSignalR()
+    {
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/timingHub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+            _hubConnection.On<LiveTimeUpdateDTO>("ReceiveTimeUpdate", async (update) =>
+            {
+                if (_disposed) return;
+
+                if (update.RaceId == RaceId && update.SplitId == _prefinishSplitId)
+                {
+                    int bibNumber = 0;
+                    string participantName = "Corredor";
+                    int actualChipId = update.ChipId;
+
+                    try
+                    {
+                        await using var context = DbContextFactory.CreateDbContext();
+
+                        if (actualChipId == 0)
+                        {
+                            var latestRecord = await context.TimeRecords
+                .Where(tr => tr.RaceId == RaceId &&
+                tr.SplitId == update.SplitId &&
+                tr.Timestamp == update.Timestamp)
+                .OrderByDescending(tr => tr.TimeRecordId)
+                .Select(tr => tr.ChipId)
+                .FirstOrDefaultAsync();
+
+                            if (latestRecord > 0)
+                            {
+                                actualChipId = latestRecord;
+                            }
+                        }
+
+                        if (actualChipId > 0)
+                        {
+                            var regInfo = await (from rc in context.RegistrationChips
+                                                 join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
+                                                 join p in context.Participants on r.ParticipantId equals p.ParticipantId
+                                                 where rc.ChipId == actualChipId && r.RaceId == RaceId
+                                                 select new
+                                                 {
+                                                     r.BibNumber,
+                                                     ParticipantName = (p.FirstName + " " + p.LastName).Trim()
+                                                 }).FirstOrDefaultAsync();
+
+                            if (regInfo != null)
+                            {
+                                bibNumber = regInfo.BibNumber ?? 0;
+                                participantName = regInfo.ParticipantName;
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // Convertir timestamp UTC a local antes de calcular
+                    var timestampLocal = update.Timestamp.Kind == DateTimeKind.Utc
+        ? update.Timestamp.ToLocalTime()
+        : update.Timestamp;
+
+                    var elapsed = _raceStartTime.HasValue
+        ? timestampLocal - _raceStartTime.Value
+        : TimeSpan.Zero;
+
+                    var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
+
+                    var newFinisher = new FinisherData
+                    {
+                        BibNumber = bibNumber,
+                        ParticipantName = participantName,
+                        ElapsedTime = elapsedTime,
+                        Timestamp = update.Timestamp
+                    };
+
+                    _finishers.Add(newFinisher);
+                    _lastFinisher = newFinisher;
+
+                    try
+                    {
+                        await InvokeAsync(StateHasChanged);
+                    }
+                    catch (ObjectDisposedException) { }
+                }
+            });
+
+            _hubConnection.Reconnected += async (connectionId) =>
+            {
+                if (_disposed) return;
+
+                await _hubConnection.SendAsync("SubscribeToRace", RaceId);
+                if (_prefinishSplitId.HasValue)
+                {
+                    await _hubConnection.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
+                }
+
+                try
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch (ObjectDisposedException) { }
+            };
+
+            await _hubConnection.StartAsync();
+
+            await _hubConnection.SendAsync("SubscribeToRace", RaceId);
+            if (_prefinishSplitId.HasValue)
+            {
+                await _hubConnection.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
+            }
+        }
+        catch { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        if (_raceTimer != null)
+        {
+            await _raceTimer.DisposeAsync();
+            _raceTimer = null;
+        }
+
+        if (_hubConnection is not null)
+        {
+            try
+            {
+                await _hubConnection.SendAsync("UnsubscribeFromRace", RaceId);
+                if (_prefinishSplitId.HasValue)
+                {
+                    await _hubConnection.SendAsync("UnsubscribeFromSplit", _prefinishSplitId.Value);
+                }
+                await _hubConnection.StopAsync();
+                await _hubConnection.DisposeAsync();
+            }
+            catch { }
+        }
+    }
+
+    private class FinisherData
+    {
+        public int BibNumber { get; set; }
+        public string ParticipantName { get; set; } = "";
+        public string ElapsedTime { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+    }
+}

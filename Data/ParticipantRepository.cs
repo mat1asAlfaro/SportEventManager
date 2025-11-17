@@ -107,6 +107,8 @@ namespace SportEventManager.Data
                 existingParticipant.LastName = participant.LastName;
                 existingParticipant.Email = participant.Email;
                 existingParticipant.DocumentNumber = participant.DocumentNumber;
+                existingParticipant.Birthdate = participant.Birthdate;
+                existingParticipant.Gender = participant.Gender;
 
                 await _context.SaveChangesAsync();
             }
@@ -123,6 +125,22 @@ namespace SportEventManager.Data
                 _context.Participants.Remove(participant);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<int?> GetParticipantAgeAsync(int participantId) {
+            await using var _context = _contextFactory.CreateDbContext();
+            var participant = await _context.Participants
+                .AsNoTracking()
+                .Select(p => new { p.ParticipantId, p.Birthdate })
+                .FirstOrDefaultAsync(p => p.ParticipantId == participantId);
+
+            if (participant == null)
+                return null;
+
+            var today = DateTime.Today;
+            var age = today.Year - participant.Birthdate.Year;
+            if (participant.Birthdate.Date > today.AddYears(-age)) age--;
+            return age;
         }
     }
 }

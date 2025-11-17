@@ -93,6 +93,26 @@ namespace SportEventManager.Data
             }
         }
 
+        public async Task<bool> ExistsByParticipantAndEventAsync(int participantId, int eventId)
+        {
+            return await _context.Registrations
+                .Include(r => r.Race)
+                .AnyAsync(r => r.ParticipantId == participantId && r.Race!.EventId == eventId);
+        }
+
+        public async Task<bool> ExistsByParticipantAndRaceAsync(int participantId, int raceId)
+        {
+            return await _context.Registrations
+                .AnyAsync(r => r.ParticipantId == participantId && r.RaceId == raceId);
+        }
+
+        public async Task<Registration?> GetParticipantRegistrationInEventAsync(int participantId, int eventId)
+        {
+            return await _context.Registrations
+                .Include(r => r.Race)
+                .FirstOrDefaultAsync(r => r.ParticipantId == participantId && r.Race!.EventId == eventId);
+        }
+        
         public async Task<bool> AssignBibNumberAsync(int registrationId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
@@ -154,8 +174,7 @@ namespace SportEventManager.Data
             return true;
         }
 
-        public async Task<int?> GetBibNumberAsync(int registrationId)
-        {
+        public async Task<int?> GetBibNumberAsync(int registrationId) {
             var registration = await _context.Registrations.FindAsync(registrationId);
             if (registration == null)
                 throw new Exception("Registro no encontrado.");
