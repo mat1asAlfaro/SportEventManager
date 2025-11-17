@@ -139,7 +139,6 @@ namespace SportEventManager.Data
 
                 var raceId = split.RaceId;
 
-                // Evitar registros duplicados
                 var existingRecord = await GetByChipAndSplitAsync(reading.ChipId, reading.SplitId);
                 if (existingRecord != null)
                 {
@@ -217,7 +216,6 @@ namespace SportEventManager.Data
 
         private async Task<int> CalculateCurrentPosition(int raceId, double distanceCompleted, TimeSpan? elapsedTime)
         {
-            // Obtener data de todos los corredores de la carrera
             var allRunners = await _context.Registrations
                 .Where(r => r.RaceId == raceId)
                 .Include(r => r.RegistrationChips)
@@ -250,13 +248,11 @@ namespace SportEventManager.Data
                 runnerStats.Add((runner.BibNumber ?? 0, km, time));
             }
 
-            // Ordenar por: mayor distancia → menor tiempo
             var ordered = runnerStats
                 .OrderByDescending(r => r.Distance)
                 .ThenBy(r => r.Time)
                 .ToList();
 
-            // Buscar posición del corredor solicitado
             var pos = ordered.FindIndex(r =>
                 Math.Abs(r.Distance - distanceCompleted) < 0.001 &&
                 r.Time == elapsedTime) + 1;
@@ -292,7 +288,6 @@ namespace SportEventManager.Data
                 Status = "No iniciado"
             };
 
-            // Distancia oficial → OPCIÓN A (tu elección)
             double totalRaceKm = registration.Race?.DistanceKm ?? 0;
 
             // ============
@@ -380,9 +375,13 @@ namespace SportEventManager.Data
             // ============
             // Porcentajes
             // ============
+            Console.WriteLine($"DISTANCIA COMPLETADA: {dto.DistanceCompleted}");
+            Console.WriteLine($"TOTAL KM CARRERA: {totalRaceKm}");
             dto.ProgressPercentage =
                 totalRaceKm > 0 ? Math.Round(dto.DistanceCompleted / totalRaceKm * 100, 2) : 0;
 
+            Console.WriteLine($"SPLITS COMPLETADOS: {completedSplits}");
+            Console.WriteLine($"SPLITS TOTALES: {totalSplits}");
             dto.SplitsPercentage =
                 totalSplits > 0 ? Math.Round((double)completedSplits / totalSplits * 100, 2) : 0;
 
@@ -425,6 +424,7 @@ namespace SportEventManager.Data
             var lastRecord = last;
             double lastKm = lastRecord.Split?.KmMark ?? 0;
             var interpolationPace = dto.CurrentPace ?? dto.AveragePace;
+            splitList = splitList.OrderBy(s => s.KmMark).ToList();
 
             if (interpolationPace is null || interpolationPace.Value.TotalMinutes <= 0)
             {
@@ -435,12 +435,10 @@ namespace SportEventManager.Data
                 double minutesSince = (DateTime.UtcNow - lastRecord.Timestamp).TotalMinutes;
                 double kmExtra = minutesSince / interpolationPace.Value.TotalMinutes;
 
-                var nextSplit = splitList.FirstOrDefault(s => s.KmMark > lastKm);
-                double nextKm = nextSplit?.KmMark ?? totalRaceKm;
-
-                double interp = Math.Min(lastKm + kmExtra, nextKm);
+                double interp = Math.Min(lastKm + kmExtra, lastKm);
                 dto.InterpolatedDistance = Math.Min(interp, totalRaceKm);
             }
+
 
             dto.ProgressPercentageInterpolated =
                 totalRaceKm > 0 ? Math.Round(dto.InterpolatedDistance / totalRaceKm * 100, 2) : 0;

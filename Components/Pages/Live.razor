@@ -8,6 +8,7 @@
 @using SportEventManager.Migrations
 @using SportEventManager.Models
 @using System.Threading.Tasks
+@using Microsoft.AspNetCore.WebUtilities
 @rendermode InteractiveServer
 
 @inject IRaceRepository RaceRepository
@@ -85,12 +86,18 @@
           <div class="col-12">
             <button
               class="btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 fs-6 fw-semibold w-100"
-              @onclick="SearchParticipant" disabled="@IsSearchDisabled">
+              @onclick="SearchParticipant">
               <span class="material-symbols-outlined fs-5">search</span>
               Buscar Corredor
             </button>
+            @if (!string.IsNullOrEmpty(validationError))
+            {
+              <div class="text-error mt-3 mb-0">
+                <span class="material-symbols-outlined align-middle me-1 fs-5">error</span>
+                <small>@validationError</small>
+              </div>
+            }
           </div>
-
         </div>
       </div>
     </div>
@@ -155,7 +162,7 @@
             </div>
           </div>
 
-          @* Lista de splits *@
+          @* Splits List *@
           <div class="d-flex align-items-center gap-2 mt-4 mb-3">
             <span class="material-symbols-outlined fs-6 text-primary">flag</span>
             <span class="text-secondary small fw-semibold">Puntos de Control</span>
@@ -227,7 +234,7 @@
           <h5 class="fw-semibold mb-2 text-primary">Métricas Calculadas</h5>
           <span class="text-secondary small fw-semibold">Basadas en datos de chips RFID</span>
 
-          @* Lista de metricas *@
+          @* Matrics List *@
           <div class="bg-card-split p-3 rounded-3 mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="d-flex align-items-center gap-2">
@@ -299,11 +306,12 @@
 
           @if (isLoading)
           {
-            <div class="text-center mt-4">
+            <div class="text-center mt-4 d-flex flex-column align-items-center">
               <div class="spinner-border text-primary slow-spinner" role="status" style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">Cargando...</span>
               </div>
-              <p class="mt-2 text-secondary">Buscando corredor...</p>
+
+              <small class="mt-2 text-secondary">Buscando corredor...</small>
             </div>
           }
         </div>
@@ -316,22 +324,28 @@
   private List<EventDTO> uniqueEvents = new();
   private List<RaceDTO> liveRaces = new();
   private List<RaceDTO> filteredRaces = new();
+  private LiveParticipantDataDTO? liveParticipantData;
+  private RadzenDataGrid<RaceDTO>? racesGrid;
+  private DateTime _lastRefresh = DateTime.MinValue;
+
   private int totalRunners;
   private int totalSplits;
-  private DateTime _lastRefresh = DateTime.MinValue;
-  private RadzenDataGrid<RaceDTO>? racesGrid;
-  private bool isProcessing = false;
   private int? selectedEventId;
   private int? selectedRaceId;
   private int? bibNumber;
-  private LiveParticipantDataDTO? liveParticipantData;
+
   private string? distanceSelectedRace;
+  private string? validationError;
+
+  private bool isProcessing = false;
+  private bool isLoading = false;
   private bool hasSearched = false;
+  private bool initializedFromUrl = false;
   private bool IsSearchDisabled =>
   selectedEventId is null ||
   selectedRaceId is null ||
   bibNumber is null;
-  private bool isLoading = false;
+
 
   protected override async Task OnInitializedAsync()
   {
@@ -349,9 +363,44 @@
     totalSplits = liveRaces.Sum(r => r.Splits?.Count ?? 0);
   }
 
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      initializedFromUrl = true;
+
+      var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+      var query = QueryHelpers.ParseQuery(uri.Query);
+
+      if (query.TryGetValue("event", out var eventStr) &&
+      int.TryParse(eventStr, out var eventId))
+      {
+        selectedEventId = eventId;
+        OnEventChanged();
+      }
+
+      if (query.TryGetValue("race", out var raceStr) &&
+      int.TryParse(raceStr, out var raceId))
+      {
+        selectedRaceId = raceId;
+      }
+
+      if (query.TryGetValue("bib", out var bibStr) &&
+      int.TryParse(bibStr, out var bib))
+      {
+        bibNumber = bib;
+      }
+
+      if (selectedEventId != null && selectedRaceId != null && bibNumber != null)
+      {
+        await SearchParticipant();
+        StateHasChanged();
+      }
+    }
+  }
+
   private async void HandleRaceUpdate(int updateRaceId)
   {
-    // Filtrar solo las actualizaciones de esta carrera y corredor
     if (updateRaceId == selectedRaceId)
     {
       var now = DateTime.UtcNow;
@@ -382,7 +431,8 @@
     .Where(r => r.Event?.EventId == selectedEventId)
     .ToList();
 
-    selectedRaceId = null;
+    if (!initializedFromUrl)
+      selectedRaceId = null;
   }
 
   private int ProgressPercentageInt
@@ -398,18 +448,35 @@
   private async Task SearchParticipant()
   {
     hasSearched = true;
-    isLoading = true;
+    isLoading = false;
     liveParticipantData = null;
+    validationError = null;
+
+    if (selectedEventId is null)
+    {
+      validationError = "Debe seleccionar un evento.";
+      StateHasChanged();
+      return;
+    }
+
+    if (selectedRaceId is null)
+    {
+      validationError = "Debe seleccionar una carrera.";
+      StateHasChanged();
+      return;
+    }
+
+    if (bibNumber is null || bibNumber <= 0)
+    {
+      validationError = "Debe ingresar un número de dorsal válido.";
+      StateHasChanged();
+      return;
+    }
+
+    isLoading = true;
     StateHasChanged();
 
     await Task.Delay(2000);
-
-    if (selectedRaceId is null || bibNumber is null)
-    {
-      isLoading = false;
-      liveParticipantData = null;
-      return;
-    }
 
     liveParticipantData = await TimeRecordRepository
     .GetLiveParticipantDataByBibAsync(selectedRaceId!.Value, bibNumber!.Value);
@@ -422,6 +489,8 @@
     RaceUpdateService.OnRaceUpdate += HandleRaceUpdate;
 
     isLoading = false;
+
+    Navigation.NavigateTo($"/live?event={selectedEventId}&race={selectedRaceId}&bib={bibNumber}", replace: false);
   }
 
   private string GetParticipantStatusBadgeClass()
@@ -435,7 +504,3 @@
     };
   }
 }
-
-<style>
-
-</style>

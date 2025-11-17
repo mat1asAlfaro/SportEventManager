@@ -10,31 +10,31 @@
       </div>
 
       <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Nombre del evento</label>
-            <input type="text" class="form-control" @bind="newEvent.Name" />
-          </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Nombre del evento</label>
+          <input type="text" class="form-control" @bind="newEvent.Name" />
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Descripción</label>
-            <input type="text" class="form-control" @bind="newEvent.Description" rows="3" />
-          </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Descripción</label>
+          <input type="text" class="form-control" @bind="newEvent.Description" rows="3" />
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Ubicación</label>
-            <input type="text" class="form-control" @bind="newEvent.Location" />
-          </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Ubicación</label>
+          <input type="text" class="form-control" @bind="newEvent.Location" />
+        </div>
 
-          <div class="row">
-            <div class="col">
-              <label class="form-label fw-semibold">Fecha inicio</label>
-              <input type="date" class="form-control custom-datetime" @bind="newEvent.StartDate" />
-            </div>
-            <div class="col">
-              <label class="form-label fw-semibold">Fecha fin</label>
-              <input type="date" class="form-control custom-datetime" @bind="newEvent.EndDate" />
-            </div>
+        <div class="row">
+          <div class="col">
+            <label class="form-label fw-semibold">Fecha Inicio</label>
+            <input type="date" class="form-control custom-datetime" @bind="newEvent.StartDate" />
           </div>
+          <div class="col">
+            <label class="form-label fw-semibold">Fecha Fin</label>
+            <input type="date" class="form-control custom-datetime" @bind="newEvent.EndDate" />
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
