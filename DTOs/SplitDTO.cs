@@ -13,5 +13,6 @@ namespace SportEventManager.DTOs
         public RaceDTO? Race { get; set; }
         public string? SplitName { get; set; }
         public double? KmMark { get; set; }
+        public bool IsDefault { get; set; }
     }
 }

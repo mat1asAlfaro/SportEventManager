@@ -147,7 +147,23 @@ namespace SportEventManager.Data
     public async Task AddRaceAsync(Race race)
     {
       await using var _context = _contextFactory.CreateDbContext();
+
       _context.Races.Add(race);
+      await _context.SaveChangesAsync();
+
+      var defaultSplits = new List<Split>
+      {
+        new Split { Race = race, SplitName = "Salida", KmMark = 0 },
+        new Split { Race = race, SplitName = "Punto Medio", KmMark = race.DistanceKm / 2 },
+        new Split { Race = race, SplitName = "Entrada a Meta", KmMark = race.DistanceKm - 0.05},
+        new Split { Race = race, SplitName = "Meta", KmMark = race.DistanceKm }
+      };
+
+      foreach (var split in defaultSplits)
+      {
+        _context.Splits.Add(split);
+      }
+
       await _context.SaveChangesAsync();
     }
 
