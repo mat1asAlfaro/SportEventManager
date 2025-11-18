@@ -64,10 +64,33 @@
                     </div>
                   </div>
 
-                  <span class="material-symbols-outlined text-danger fs-5 ms-auto"
-                    @onclick="() => RemoveSplit(split.SplitId)" role="button">close</span>
+                  @if (!split.IsDefault)
+                  {
+                    <button class="btn btn-sm text-error p-1" title="Eliminar Punto de Control">
+                      <span class="material-symbols-outlined text-danger fs-5 ms-auto" @onclick="() => AskDeleteSplit(split)"
+                        role="button">delete</span>
+                    </button>
+                  }
+                  else
+                  {
+                    <button class="btn btn-sm text-error p-1" title="Eliminar Punto de Control">
+                      <span class="material-symbols-outlined text-danger fs-5 ms-auto btn-close-hover">delete</span>
+                    </button>
+                  }
                 </div>
               }
+            </div>
+
+            <hr />
+
+            <div class="d-flex align-items-center gap-2 flex-nowrap">
+              <span class="material-symbols-outlined fs-6 text-secondary" style="line-height: 1; margin-top: 2px;">
+                info
+              </span>
+              <span class="text-secondary small" style="font-size: 12px;">
+                Para asegurar la precisión en el seguimiento de la carrera, se recomienda conservar estos puntos de
+                control predeterminados.
+              </span>
             </div>
           </div>
         }
@@ -85,6 +108,16 @@
           <span class="material-symbols-outlined me-2 fs-6">close</span>Cerrar
         </button>
       </div>
+
+      @* Modals *@
+      <GenericConfirmModal @ref="deleteSplitModal" Title="Confirmar Eliminación" ConfirmButtonText="Eliminar"
+        ConfirmButtonClass="btn-danger" OnConfirm="ConfirmDeleteSplit">
+        <p>
+          ¿Estás seguro de que deseas eliminar el punto de control
+          <strong>@selectedSplitName</strong>?
+          Esta acción no se puede deshacer.
+        </p>
+      </GenericConfirmModal>
     </div>
   </div>
 </div>
@@ -94,6 +127,10 @@
   [Parameter] public EventCallback<int> OnDelete { get; set; }
   [Parameter] public EventCallback OnCancel { get; set; }
 
+  private GenericConfirmModal? deleteSplitModal;
+  private (int RaceId, int SplitId) pendingDeleteSplit;
+  private string selectedSplitName = string.Empty;
+  private int selectedSplitId { get; set; }
   private bool IsVisible { get; set; }
   private int RaceId { get; set; }
   private string RaceName { get; set; } = string.Empty;
@@ -110,6 +147,12 @@
     RaceName = race.RaceName ?? string.Empty;
     RaceDistanceKm = race.DistanceKm;
     Splits = race.Splits != null ? new List<SplitDTO>(race.Splits) : new List<SplitDTO>();
+
+    foreach (var s in Splits)
+    {
+      if (s.SplitName is "Salida" or "Punto Medio" or "Entrada a Meta" or "Meta")
+        s.IsDefault = true;
+    }
 
     IsVisible = true;
     StateHasChanged();
@@ -155,6 +198,23 @@
     ResetForm();
   }
 
+  private async Task AskDeleteSplit(SplitDTO split)
+  {
+    selectedSplitName = split.SplitName ?? string.Empty;
+    selectedSplitId = split.SplitId;
+
+    deleteSplitModal?.Show(split.SplitId, split.SplitName ?? string.Empty);
+  }
+
+  private async Task ConfirmDeleteSplit()
+  {
+    await OnDelete.InvokeAsync(selectedSplitId);
+
+    Splits.RemoveAll(s => s.SplitId == selectedSplitId);
+
+    StateHasChanged();
+  }
+
   private async Task RemoveSplit(int splitId)
   {
     var split = Splits.FirstOrDefault(s => s.SplitId == splitId);
@@ -178,3 +238,9 @@
     await OnCancel.InvokeAsync();
   }
 }
+
+<style>
+  .btn-close-hover {
+    cursor: not-allowed;
+  }
+</style>
