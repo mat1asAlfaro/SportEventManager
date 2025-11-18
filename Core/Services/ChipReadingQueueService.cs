@@ -1,17 +1,21 @@
 using System.Threading.Channels;
 using SportEventManager.DTOs;
 using SportEventManager.Core;
+using SportEventManager.Core.Services;
+using SportEventManager.Models;
 
-namespace SportEventManager.Services;
+namespace SportEventManager.Core.Services;
 
 public class ChipReadingQueueService : BackgroundService, IChipReadingQueueService
 {
     private readonly Channel<ChipReadingDTO> _queue;
     private readonly IServiceProvider _serviceProvider;
+    private readonly RaceUpdateService _raceUpdateService;
     private readonly ILogger<ChipReadingQueueService> _logger;
 
     public ChipReadingQueueService(
         IServiceProvider serviceProvider,
+        RaceUpdateService raceUpdateService,
         ILogger<ChipReadingQueueService> logger)
     {
         var options = new BoundedChannelOptions(1000) // Max tokens in queue
@@ -20,6 +24,7 @@ public class ChipReadingQueueService : BackgroundService, IChipReadingQueueServi
         };
         _queue = Channel.CreateBounded<ChipReadingDTO>(options);
         _serviceProvider = serviceProvider;
+        _raceUpdateService = raceUpdateService;
         _logger = logger;
     }
 
@@ -50,6 +55,7 @@ public class ChipReadingQueueService : BackgroundService, IChipReadingQueueServi
                 if (result != null)
                 {
                     _logger.LogInformation($"Successfully processed chip reading from queue: {result.TimeRecordId}");
+                    await _raceUpdateService.NotifyUpdate(reading.SplitId);
                 }
                 else
                 {

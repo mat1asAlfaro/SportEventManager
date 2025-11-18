@@ -881,7 +881,7 @@ namespace SportEventManager.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SplitId"));
 
-                    b.Property<double?>("KmMark")
+                    b.Property<double>("KmMark")
                         .HasColumnType("float");
 
                     b.Property<int>("RaceId")
@@ -1011,7 +1011,7 @@ namespace SportEventManager.Migrations
                             ChipId = 3,
                             RaceId = 2,
                             SplitId = 5,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 4, 30, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 8, 30, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
@@ -1019,7 +1019,7 @@ namespace SportEventManager.Migrations
                             ChipId = 3,
                             RaceId = 2,
                             SplitId = 6,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 8, 40, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 16, 40, 0, DateTimeKind.Unspecified)
                         });
                 });
 

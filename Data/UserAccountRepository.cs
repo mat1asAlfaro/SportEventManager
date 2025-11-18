@@ -15,9 +15,10 @@ namespace SportEventManager.Data
             _context = context;
         }
 
-        public async Task<UserAccount> GetByUsernameAsync(string username)
+        public async Task<UserAccount?> GetByUsernameAsync(string username)
         {
-            return await _context.UserAccounts.FirstOrDefaultAsync(u => u.Username == username);
+            return await _context.UserAccounts
+                .FirstOrDefaultAsync(u => u.Username == username);
         }
     }
 }

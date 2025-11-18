@@ -1,6 +1,4 @@
 @page "/live"
-@using Radzen
-@using Radzen.Blazor
 @using SportEventManager.Components.Pages.Account
 @using SportEventManager.Core
 @using SportEventManager.Core.Services
@@ -325,7 +323,6 @@
   private List<RaceDTO> liveRaces = new();
   private List<RaceDTO> filteredRaces = new();
   private LiveParticipantDataDTO? liveParticipantData;
-  private RadzenDataGrid<RaceDTO>? racesGrid;
   private DateTime _lastRefresh = DateTime.MinValue;
 
   private int totalRunners;
@@ -337,7 +334,6 @@
   private string? distanceSelectedRace;
   private string? validationError;
 
-  private bool isProcessing = false;
   private bool isLoading = false;
   private bool hasSearched = false;
   private bool initializedFromUrl = false;

@@ -74,26 +74,24 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseRouting();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapControllers();
 
+app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Mapear OpenAPI
-app.MapOpenApi();
-
-// Mapear el Hub de SignalR
 app.MapHub<TimingHub>("/timingHub");
-// app.MapBlazorHub();
-// app.MapFallbackToPage("/");
+app.MapOpenApi();
 
 // ========================================
 // MINIMAL API for RFID timing registration
@@ -101,12 +99,8 @@ app.MapHub<TimingHub>("/timingHub");
 
 app.MapPost("/api/timing/register", async (
     ChipReadingDTO reading,
-<<<<<<< HEAD
     ITimeRecordRepository timeRecordRepository,
-    RaceUpdateService raceUpdateService,
-=======
     IChipReadingQueueService queueService,
->>>>>>> origin/main
     ILogger<Program> logger) =>
 {
     try
@@ -119,26 +113,14 @@ app.MapPost("/api/timing/register", async (
 
         await queueService.EnqueueAsync(reading);
 
-<<<<<<< HEAD
-        if (result == null)
-        {
-            logger.LogWarning($"Failed to register chip reading: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
-            return Results.BadRequest(new { error = "Failed to register time record. Split may not exist or record already exists." });
-        }
-
-        await raceUpdateService.NotifyUpdate(reading.SplitId);
-        logger.LogInformation($"Successfully registered chip reading: {result.TimeRecordId}");
-        return Results.Ok(result);
-=======
         logger.LogInformation($"Chip reading accepted and queued: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
-        return Results.Accepted("/api/timing/register", new 
-        { 
+        return Results.Accepted("/api/timing/register", new
+        {
             message = "Chip reading accepted and queued for processing",
             chipId = reading.ChipId,
             splitId = reading.SplitId,
             queueSize = queueService.GetQueueCount()
         });
->>>>>>> origin/main
     }
     catch (Exception ex)
     {

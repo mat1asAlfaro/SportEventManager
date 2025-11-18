@@ -308,10 +308,9 @@ namespace SportEventManager.Data
       await _context.SaveChangesAsync();
 
       // Emitir actualizacion en tiempo readonly
-      // await _hubContext.Clients.Group(raceId.ToString())
-      //     .SendAsync("ReceiveRaceUpdate", new { DistanceKm = distanceKm, BibNumber = bibNumber });
       Console.WriteLine($"[REPO] Emitiendo actualización para race_{raceId}: dorsal={bibNumber}, distancia={distanceKm}");
-      await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, bibNumber, distanceKm);
+      // await _hubContext.Clients.All.SendAsync("ReceiveRaceUpdate", raceId, bibNumber, distanceKm);
+      await _hubContext.Clients.Group(raceId.ToString()).SendAsync("ReceiveRaceUpdate", raceId, bibNumber, distanceKm);
     }
 
     public async Task NotifyRaceStartedAsync(int raceId)

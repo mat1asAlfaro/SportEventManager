@@ -375,13 +375,9 @@ namespace SportEventManager.Data
             // ============
             // Porcentajes
             // ============
-            Console.WriteLine($"DISTANCIA COMPLETADA: {dto.DistanceCompleted}");
-            Console.WriteLine($"TOTAL KM CARRERA: {totalRaceKm}");
             dto.ProgressPercentage =
                 totalRaceKm > 0 ? Math.Round(dto.DistanceCompleted / totalRaceKm * 100, 2) : 0;
 
-            Console.WriteLine($"SPLITS COMPLETADOS: {completedSplits}");
-            Console.WriteLine($"SPLITS TOTALES: {totalSplits}");
             dto.SplitsPercentage =
                 totalSplits > 0 ? Math.Round((double)completedSplits / totalSplits * 100, 2) : 0;
 

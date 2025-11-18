@@ -7,7 +7,8 @@
         </a>
     </div>
 
-    <button class="menu-toggle" @onclick="ToggleMenu" aria-label="Abrir menú" aria-expanded="@isMenuOpen" aria-controls="primary-nav">
+    <button class="menu-toggle" @onclick="ToggleMenu" aria-label="Abrir menú" aria-expanded="@isMenuOpen"
+        aria-controls="primary-nav">
         <span class="material-symbols-outlined">@((isMenuOpen ? "close" : "menu"))</span>
     </button>
 
@@ -24,14 +25,10 @@
             <span class="material-symbols-outlined fs-5">leaderboard</span>
             Clasificaciones
         </a>
-<<<<<<< HEAD
-        <a href="/live" class="links">
+        <a href="/live" class="links" @onclick="CloseMenu">
             <span class="material-symbols-outlined fs-5">bigtop_updates</span>
             En Vivo
         </a>
-    </div>
-</div>
-=======
         <AuthorizeView Roles="Admin">
             <Authorized>
                 <a href="/admin/dashboard" class="links admin-link" @onclick="CloseMenu">
@@ -54,4 +51,3 @@
     private void ToggleMenu() => isMenuOpen = !isMenuOpen;
     private void CloseMenu() => isMenuOpen = false;
 }
->>>>>>> origin/main

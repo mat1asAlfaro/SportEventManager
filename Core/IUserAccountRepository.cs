@@ -3,6 +3,6 @@ namespace SportEventManager.Core
 {
     public interface IUserAccountRepository
     {
-        Task<UserAccount> GetByUsernameAsync(string username);
+        Task<UserAccount?> GetByUsernameAsync(string username);
     }
 }

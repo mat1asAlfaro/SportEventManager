@@ -12,8 +12,8 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    [Migration("20251114182629_fix-data")]
-    partial class fixdata
+    [Migration("20251114182629_FixData")]
+    partial class FixData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

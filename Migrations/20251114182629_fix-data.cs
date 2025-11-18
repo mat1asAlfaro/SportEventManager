@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SportEventManager.Migrations
 {
     /// <inheritdoc />
-    public partial class fixdata : Migration
+    public partial class FixData : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
