@@ -1,13 +1,14 @@
 @using Radzen
 @using Radzen.Blazor
 @using SportEventManager.Core
+@using SportEventManager.Core.Services
 @using SportEventManager.DTOs
 @using SportEventManager.Models
 @inject ITimeRecordRepository TimeRecordRepository
 @inject ISplitRepository SplitRepository
 @inject IRegistrationRepository RegistrationRepository
 @inject IRaceRepository RaceRepository
-@inject SportEventManager.Services.ITimingCalculationsService TimingService
+@inject ITimingCalculationsService TimingService
 
 @* Tabla de posiciones con filtros y paginado *@
 <div class="card shadow-sm border-0 mt-4">
@@ -15,13 +16,15 @@
     <div class="d-flex flex-wrap gap-3 justify-content-between align-items-end">
       <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
         <div class="position-relative">
-          <span class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 start-0 translate-middle-y ms-3">search</span>
-          <input type="text" class="form-control ps-5 placeholder-white" placeholder="Buscar corredor..." @oninput="OnSearchTextChanged" />
+          <span
+            class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 start-0 translate-middle-y ms-3">search</span>
+          <input type="text" class="form-control ps-5 placeholder-white" placeholder="Buscar corredor..."
+            @oninput="OnSearchTextChanged" />
         </div>
       </div>
       <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
         <select class="form-select" @onchange="OnCategoryChanged">
-          <option value="">Todas las categorías</option>
+          <option value="">Todas las categorï¿½as</option>
           @foreach (var c in categories)
           {
             <option value="@c" selected="@(selectedCategory == c)">@c</option>
@@ -32,7 +35,8 @@
   </div>
 
   <div class="card-body">
-    <RadzenDataGrid Data="@filteredRows" TItem="LeaderboardRow" AllowPaging="true" PageSize="10" AllowSorting="false" ShowPagingSummary="true" Class="custom-data-grid-scroll">
+    <RadzenDataGrid Data="@filteredRows" TItem="LeaderboardRow" AllowPaging="true" PageSize="10" AllowSorting="false"
+      ShowPagingSummary="true" Class="custom-data-grid-scroll">
       <Columns>
         <RadzenDataGridColumn TItem="LeaderboardRow" Title="Pos." Width="80px" Property="Position" />
         <RadzenDataGridColumn TItem="LeaderboardRow" Title="Atleta" Width="240px">
@@ -55,7 +59,7 @@
         <RadzenDataGridColumn TItem="LeaderboardRow" Title="Ritmo" Width="120px">
           <Template Context="r">@r.PaceFormatted</Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categoría" Width="180px">
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categorï¿½a" Width="180px">
           <Template Context="r">@r.CategoryName</Template>
         </RadzenDataGridColumn>
       </Columns>
@@ -95,32 +99,34 @@
 
     if (RaceId <= 0) return;
 
-    var race = await RaceRepository.GetByIdAsync(RaceId);
+    var race = await RaceRepository.GetRaceByIdAsync(RaceId);
     raceDistanceKm = race?.DistanceKm ?? 0;
 
     var registrations = (await RegistrationRepository.GetByRaceIdAsync(RaceId)).ToList();
     var regByChipId = registrations
-      .Where(r => r.RegistrationChips != null)
-      .SelectMany(r => r.RegistrationChips!.Select(rc => new { rc.ChipId, Reg = r }))
-      .ToDictionary(x => x.ChipId, x => new {
-        Name = $"{x.Reg.Participant?.FirstName} {x.Reg.Participant?.LastName}".Trim(),
-        Bib = x.Reg.BibNumber,
-        Category = x.Reg.Category?.ExternalName ?? x.Reg.Category?.InternalName ?? ""
-      });
+    .Where(r => r.RegistrationChips != null)
+    .SelectMany(r => r.RegistrationChips!.Select(rc => new { rc.ChipId, Reg = r }))
+    .ToDictionary(x => x.ChipId, x => new
+    {
+      Name = $"{x.Reg.Participant?.FirstName} {x.Reg.Participant?.LastName}".Trim(),
+      Bib = x.Reg.BibNumber,
+      Category = x.Reg.Category?.ExternalName ?? x.Reg.Category?.InternalName ?? ""
+    });
 
     categories = registrations
-      .Select(r => r.Category?.ExternalName ?? r.Category?.InternalName)
-      .Where(n => !string.IsNullOrWhiteSpace(n))
-      .Distinct()
-      .OrderBy(n => n)
-      .ToList()!;
+    .Select(r => r.Category?.ExternalName ?? r.Category?.InternalName)
+    .Where(n => !string.IsNullOrWhiteSpace(n))
+    .Distinct()
+    .OrderBy(n => n)
+    .ToList()!;
 
     var splits = (await SplitRepository.GetByRaceIdAsync(RaceId)).ToList();
     var finalSplit = splits
-      .OrderByDescending(s => s.KmMark ?? 0)
-      .FirstOrDefault();
+    .OrderByDescending(s => s.KmMark)
+    .FirstOrDefault();
 
-    if (finalSplit == null) {
+    if (finalSplit == null)
+    {
       rows = new();
       return;
     }
@@ -128,13 +134,13 @@
     var records = await TimeRecordRepository.GetTimeRecordsByRaceAsync(RaceId);
 
     var groupedByChip = records
-      .GroupBy(r => r.ChipId)
-      .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList());
+    .GroupBy(r => r.ChipId)
+    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList());
 
     var finishByChip = records
-      .Where(r => r.SplitId == finalSplit.SplitId)
-      .GroupBy(r => r.ChipId)
-      .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).Last());
+    .Where(r => r.SplitId == finalSplit.SplitId)
+    .GroupBy(r => r.ChipId)
+    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).Last());
 
     foreach (var kv in finishByChip)
     {
@@ -153,16 +159,16 @@
       {
         ParticipantName = regInfo?.Name ?? finish.ParticipantName ?? $"Chip {chipId}",
         BibNumber = regInfo?.Bib,
-        CategoryName = regInfo?.Category ?? "—",
+        CategoryName = regInfo?.Category ?? "ï¿½",
         TotalTime = total,
         PaceFormatted = pace
       });
     }
 
     rows = rows
-      .OrderBy(r => r.TotalTime)
-      .Select((r, idx) => { r.Position = idx + 1; return r; })
-      .ToList();
+    .OrderBy(r => r.TotalTime)
+    .Select((r, idx) => { r.Position = idx + 1; return r; })
+    .ToList();
   }
 
   private void ApplyFilters()

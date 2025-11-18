@@ -1,0 +1,502 @@
+@page "/live"
+@using SportEventManager.Components.Pages.Account
+@using SportEventManager.Core
+@using SportEventManager.Core.Services
+@using SportEventManager.DTOs
+@using SportEventManager.Migrations
+@using SportEventManager.Models
+@using System.Threading.Tasks
+@using Microsoft.AspNetCore.WebUtilities
+@rendermode InteractiveServer
+
+@inject IRaceRepository RaceRepository
+@inject ITimeRecordRepository TimeRecordRepository
+@inject RaceUpdateService RaceUpdateService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>En Vivo</PageTitle>
+<div class="container-live">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+
+    @* Header *@
+    <div
+      class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="dot-pulse-w-3 bg-success"></span>
+          <h1 class="fs-3 fw-bold text-primary mb-2">Seguimiento En Vivo</h1>
+        </div>
+        <p class="text-secondary mb-0">Rastrea el progreso de un corredor en tiempo real</p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+      <div class="card-body pb-0">
+        <div class="d-flex align-items-center mb-4">
+          <span class="material-symbols-outlined me-2 text-secondary fs-5">search</span>
+          <h5 class="fw-semibold mb-0">Buscar Corredor</h5>
+        </div>
+
+        <div class="row g-4 mb-4">
+
+          <div class="col-12 col-md-4">
+            <h6 class="fw-semibold mb-2">Eventos</h6>
+            <select class="form-select" @bind="selectedEventId" @bind:after="OnEventChanged">
+              <option hidden selected>Seleccione evento</option>
+              @if (liveRaces.Any())
+              {
+                @foreach (var ev in uniqueEvents)
+                {
+                  <option value="@ev?.EventId">@ev?.Name</option>
+                }
+              }
+              else
+              {
+                <option hidden selected>No hay eventos disponibles</option>
+              }
+            </select>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <h6 class="fw-semibold mb-2">Carreras</h6>
+            <select class="form-select" @bind="selectedRaceId">
+              <option hidden selected>Seleccione carrera</option>
+              @if (liveRaces.Any())
+              {
+                @foreach (var race in filteredRaces)
+                {
+                  <option value="@race?.RaceId">@race?.RaceName</option>
+                }
+              }
+              else
+              {
+                <option hidden selected>No hay carreras disponibles</option>
+              }
+            </select>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <h6 class="fw-semibold mb-2">Número de Dorsal</h6>
+            <input type="number" class="form-control placeholder-white" placeholder="Dorsal" @bind="bibNumber" />
+          </div>
+
+          <div class="col-12">
+            <button
+              class="btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-2 fs-6 fw-semibold w-100"
+              @onclick="SearchParticipant">
+              <span class="material-symbols-outlined fs-5">search</span>
+              Buscar Corredor
+            </button>
+            @if (!string.IsNullOrEmpty(validationError))
+            {
+              <div class="text-error mt-3 mb-0">
+                <span class="material-symbols-outlined align-middle me-1 fs-5">error</span>
+                <small>@validationError</small>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (liveParticipantData is not null)
+    {
+      <div class="live-header mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="fw-bold fs-1 text-primary-color">#@bibNumber</div>
+
+            <div>
+              <h3 class="fw-semibold mb-1">Corredor @liveParticipantData.ParticipantName</h3>
+
+              <div class="d-flex align-items-center text-secondary small gap-2">
+                <span class="material-symbols-outlined fs-5">trophy</span>
+                <span>@distanceSelectedRace km</span>
+                <span class="mx-1">•</span>
+                <span>@liveParticipantData.EventName</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge @GetParticipantStatusBadgeClass()"> @liveParticipantData.Status </span>
+            <span class="dot-pulse-w-2 bg-success"></span>
+            <small class="text-secondary">Actualizando cada 3s</small>
+          </div>
+
+        </div>
+      </div>
+
+      @* Stats Cards *@
+      <div class="stats-grid mb-4">
+        <StatsCard Title="Posición Actual" Value="@(liveParticipantData.CurrentPosition.ToString() ?? "0")"
+          Description="en la carrera" Icon="trophy" IconClass="fs-5" IconColor="text-primary-color"
+          ValueColor="text-primary" />
+        <StatsCard Title="Distancia Recorrida" Value="@(liveParticipantData.DistanceCompletedFormatted.ToString() ?? "0")"
+          Description=@($"de {distanceSelectedRace} km") Icon="location_on" IconClass="fs-5" ValueColor="text-primary" />
+        <StatsCard Title="Ritmo Promedio" Value="@(liveParticipantData.AveragePaceFormatted.ToString() ?? "0")"
+          Description="min/km" Icon="timer" IconStyle="Outlined" IconClass="fs-5" ValueColor="text-primary" />
+        <StatsCard Title="Tiempo Transcurrido" Value="@(liveParticipantData.ElapsedTimeFormatted.ToString() ?? "0")"
+          Description="desde el inicio" Icon="bigtop_updates" IconClass="fs-5" IconColor="text-success"
+          ValueColor="text-primary" />
+      </div>
+
+      <div class="two-col-grid mb-4">
+        @* Race Progress *@
+        <div class="card-live">
+
+          <h5 class="fw-semibold mb-4 text-primary">Progreso de Carrera</h5>
+
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-secondary small fw-semibold mb-1">Progreso Total</span>
+            <span
+              class="text-primary small fw-semibold">@liveParticipantData.ProgressPercentageInterpolateFormatted</span>
+          </div>
+
+          <div class="progress" style="height: 10px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: @ProgressPercentageInt%;">
+            </div>
+          </div>
+
+          @* Splits List *@
+          <div class="d-flex align-items-center gap-2 mt-4 mb-3">
+            <span class="material-symbols-outlined fs-6 text-primary">flag</span>
+            <span class="text-secondary small fw-semibold">Puntos de Control</span>
+          </div>
+
+          <div class="d-flex flex-column gap-3">
+            @foreach (var (split, index) in liveParticipantData.SplitsProgress.Select((s, i) => (s, i + 1)))
+            {
+              <div class="bg-card-split p-3 rounded-3">
+                <div class="d-flex justify-content-between align-items-center">
+
+                  <div class="d-flex align-items-center gap-3">
+                    <div
+                      class="rounded-circle d-flex align-items-center justify-content-center fw-bold @(split.Passed ? "text-primary" : "text-dark")"
+                      style="width:32px;height:32px;background-color:@(split.Passed ? "rgba(25,135,84,0.4)" : "rgba(108,117,125,1)")">
+                      <span class="small">@index</span>
+                    </div>
+
+                    <div>
+                      <div class="fw-bold">@split.SplitName</div>
+                      <small class="text-secondary">@split.KmMark km</small>
+                    </div>
+                  </div>
+
+                  <div class="text-end d-flex align-items-center gap-1">
+                    @if (split.Passed)
+                    {
+                      <small class="text-secondary me-2">@split.TimestampFormatted</small>
+                      <span class="material-symbols-outlined text-success">flag</span>
+                    }
+                  </div>
+
+                </div>
+              </div>
+            }
+          </div>
+
+          <hr>
+
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <small class="material-symbols-outlined fs-6 text-primary-color">location_on</small>
+            <small class="text-secondary fw-semibold">Último punto:</small>
+            @if (liveParticipantData.LastPassedSplit is not null)
+            {
+              <small class="text-primary fw-semibold">@liveParticipantData.LastPassedSplit?.SplitName</small>
+            }
+            else
+            {
+              <small class="text-primary fw-semibold">-</small>
+            }
+
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <small class="material-symbols-outlined fs-6 text-primary-color">timer</small>
+            <small class="text-secondary fw-semibold">Hora de paso:</small>
+            @if (liveParticipantData.LastPassedSplit is not null)
+            {
+              <small class="text-primary fw-semibold">@liveParticipantData.LastPassedSplit?.TimestampFormatted</small>
+            }
+            else
+            {
+              <small class="text-primary fw-semibold">--:--:--</small>
+            }
+          </div>
+        </div>
+
+        @* Calculated Metrics *@
+        <div class="card-live">
+          <h5 class="fw-semibold mb-2 text-primary">Métricas Calculadas</h5>
+          <span class="text-secondary small fw-semibold">Basadas en datos de chips RFID</span>
+
+          @* Matrics List *@
+          <div class="bg-card-split p-3 rounded-3 mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6 text-primary-color">timer</span>
+                <span class="text-primary fw-semibold small">Ritmo Actual</span>
+              </div>
+            </div>
+            <div class="h2 fw-bold m-0">@liveParticipantData.CurrentPaceFormatted /km</div>
+            <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+              Calculado entre últimos dos puntos de control
+            </span>
+          </div>
+
+          <div class="bg-card-split p-3 rounded-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6 text-success">earthquake</span>
+                <span class="text-primary fw-semibold small">Tiempo Estimado de Llegada</span>
+              </div>
+            </div>
+            <div class="h2 fw-bold m-0">@liveParticipantData.EstimatedTimeToFinishFormatted</div>
+            <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+              Basado en ritmo promedio actual
+            </span>
+          </div>
+
+          <div class="bg-card-split p-3 rounded-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-6 text-secondary-color">location_on</span>
+                <span class="text-primary fw-semibold small">Distancia Restante</span>
+              </div>
+            </div>
+            <div class="h2 fw-bold m-0">@liveParticipantData.DistanceLeft.ToString()</div>
+            <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+              @liveParticipantData.ProgressPercentageFormatted de la carrera completado
+            </span>
+          </div>
+
+          <hr>
+
+          <div class="d-flex align-items-center gap-2 flex-nowrap">
+            <span class="material-symbols-outlined fs-6 text-secondary" style="line-height: 1; margin-top: 2px;">
+              info
+            </span>
+            <span class="text-secondary small" style="font-size: 12px;">
+              Los datos se actualizan cuando el corredor pasa por un punto de control equipado con lectores RFID
+            </span>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (liveParticipantData is null)
+    {
+      <div class="card shadow-sm mb-4 border-0 align-items-center">
+        <div class="text-center text-secondary py-5">
+          <span class="material-symbols-outlined mb-3" style="font-size: 64px;">earthquake</span>
+          <div class="h3 fw-bold mb-2 text-primary" style="font-size: 18px;">Busca un corredor</div>
+          <p class="text-secondary">Ingresa un número de dorsal para comenzar el seguimiento en tiempo real</p>
+
+          @if (hasSearched && !isLoading && liveParticipantData is null)
+          {
+            <div class="alert alert-warning text-center m-0 w-100">
+              <span class="material-symbols-outlined align-middle me-2">error</span>
+              No se encontró ningún corredor con ese número de dorsal en esta carrera.
+            </div>
+          }
+
+          @if (isLoading)
+          {
+            <div class="text-center mt-4 d-flex flex-column align-items-center">
+              <div class="spinner-border text-primary slow-spinner" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+
+              <small class="mt-2 text-secondary">Buscando corredor...</small>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+@code {
+  private List<EventDTO> uniqueEvents = new();
+  private List<RaceDTO> liveRaces = new();
+  private List<RaceDTO> filteredRaces = new();
+  private LiveParticipantDataDTO? liveParticipantData;
+  private DateTime _lastRefresh = DateTime.MinValue;
+
+  private int totalRunners;
+  private int totalSplits;
+  private int? selectedEventId;
+  private int? selectedRaceId;
+  private int? bibNumber;
+
+  private string? distanceSelectedRace;
+  private string? validationError;
+
+  private bool isLoading = false;
+  private bool hasSearched = false;
+  private bool initializedFromUrl = false;
+  private bool IsSearchDisabled =>
+  selectedEventId is null ||
+  selectedRaceId is null ||
+  bibNumber is null;
+
+
+  protected override async Task OnInitializedAsync()
+  {
+    Console.WriteLine($"[LIVE] Componente inicializado");
+
+    liveRaces = await RaceRepository.GetLiveRacing();
+    uniqueEvents = liveRaces
+    .Where(r => r.Event != null)
+    .Select(r => r.Event!)
+    .GroupBy(e => e.EventId)
+    .Select(g => g.First())
+    .ToList();
+
+    totalRunners = liveRaces.Sum(r => r.Registrations?.Count ?? 0);
+    totalSplits = liveRaces.Sum(r => r.Splits?.Count ?? 0);
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      initializedFromUrl = true;
+
+      var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+      var query = QueryHelpers.ParseQuery(uri.Query);
+
+      if (query.TryGetValue("event", out var eventStr) &&
+      int.TryParse(eventStr, out var eventId))
+      {
+        selectedEventId = eventId;
+        OnEventChanged();
+      }
+
+      if (query.TryGetValue("race", out var raceStr) &&
+      int.TryParse(raceStr, out var raceId))
+      {
+        selectedRaceId = raceId;
+      }
+
+      if (query.TryGetValue("bib", out var bibStr) &&
+      int.TryParse(bibStr, out var bib))
+      {
+        bibNumber = bib;
+      }
+
+      if (selectedEventId != null && selectedRaceId != null && bibNumber != null)
+      {
+        await SearchParticipant();
+        StateHasChanged();
+      }
+    }
+  }
+
+  private async void HandleRaceUpdate(int updateRaceId)
+  {
+    if (updateRaceId == selectedRaceId)
+    {
+      var now = DateTime.UtcNow;
+
+      if ((now - _lastRefresh).TotalSeconds < 3)
+        return;
+
+      _lastRefresh = now;
+      @* , Dorsal={update.BibNumber} *@
+      Console.WriteLine($"[LIVE] Actualizacion recibida: Carrera={updateRaceId}");
+
+      liveParticipantData = await TimeRecordRepository
+      .GetLiveParticipantDataByBibAsync(selectedRaceId!.Value, bibNumber!.Value);
+
+      await InvokeAsync(StateHasChanged);
+    }
+  }
+
+  public void Dispose()
+  {
+    RaceUpdateService.OnRaceUpdate -= HandleRaceUpdate;
+    Console.WriteLine($"[LIVE] Componente disposed para carrera {selectedRaceId}");
+  }
+
+  private void OnEventChanged()
+  {
+    filteredRaces = liveRaces
+    .Where(r => r.Event?.EventId == selectedEventId)
+    .ToList();
+
+    if (!initializedFromUrl)
+      selectedRaceId = null;
+  }
+
+  private int ProgressPercentageInt
+  {
+    get
+    {
+      if
+      (liveParticipantData?.ProgressPercentageInterpolated == null) return 0;
+      return (int)Math.Round(liveParticipantData.ProgressPercentageInterpolated);
+    }
+  }
+
+  private async Task SearchParticipant()
+  {
+    hasSearched = true;
+    isLoading = false;
+    liveParticipantData = null;
+    validationError = null;
+
+    if (selectedEventId is null)
+    {
+      validationError = "Debe seleccionar un evento.";
+      StateHasChanged();
+      return;
+    }
+
+    if (selectedRaceId is null)
+    {
+      validationError = "Debe seleccionar una carrera.";
+      StateHasChanged();
+      return;
+    }
+
+    if (bibNumber is null || bibNumber <= 0)
+    {
+      validationError = "Debe ingresar un número de dorsal válido.";
+      StateHasChanged();
+      return;
+    }
+
+    isLoading = true;
+    StateHasChanged();
+
+    await Task.Delay(2000);
+
+    liveParticipantData = await TimeRecordRepository
+    .GetLiveParticipantDataByBibAsync(selectedRaceId!.Value, bibNumber!.Value);
+
+    var raceSelected = liveRaces.FirstOrDefault(r => r.RaceId == selectedRaceId);
+    distanceSelectedRace = raceSelected?.DistanceKm.ToString();
+
+    // Suscribirse al evento solo si encontramos al corredor
+    RaceUpdateService.OnRaceUpdate -= HandleRaceUpdate; // Previene duplicados
+    RaceUpdateService.OnRaceUpdate += HandleRaceUpdate;
+
+    isLoading = false;
+
+    Navigation.NavigateTo($"/live?event={selectedEventId}&race={selectedRaceId}&bib={bibNumber}", replace: false);
+  }
+
+  private string GetParticipantStatusBadgeClass()
+  {
+    return liveParticipantData?.Status switch
+    {
+      "Finalizado" => "status-badge-finalized",
+      "En Carrera" => "status-badge-running",
+      "No iniciado" => "status-badge-notstarted",
+      _ => "status-badge-default"
+    };
+  }
+}

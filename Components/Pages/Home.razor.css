@@ -52,6 +52,11 @@
   z-index: 10;
 }
 
+.btn-success {
+  background-color: var(--color-success);
+  color: var(--color-primary-text) !important;
+}
+
 .carousel-btn:hover {
   background: rgba(0, 0, 0, 0.8);
 }

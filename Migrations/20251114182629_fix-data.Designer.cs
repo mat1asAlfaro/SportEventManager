@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportEventManager.Data.Persistence;
 
@@ -11,9 +12,11 @@ using SportEventManager.Data.Persistence;
 namespace SportEventManager.Migrations
 {
     [DbContext(typeof(SportEventDbContext))]
-    partial class SportEventDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251114182629_FixData")]
+    partial class FixData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -215,46 +218,6 @@ namespace SportEventManager.Migrations
                             Location = "Montevideo",
                             Name = "Maratón Anual",
                             StartDate = new DateTime(2025, 12, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            EventId = 2,
-                            CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Una carrera en Piria",
-                            EndDate = new DateTime(2025, 11, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "",
-                            Name = "Recorre Maldonado 8va etapa",
-                            StartDate = new DateTime(2025, 11, 8, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            EventId = 3,
-                            CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Última etapa de Recorre Maldonado. ",
-                            EndDate = new DateTime(2026, 11, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "Maldonado",
-                            Name = "Recorre Maldonado 9na etapa",
-                            StartDate = new DateTime(2025, 11, 29, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            EventId = 4,
-                            CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Primera carrera del año en Punta",
-                            EndDate = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "Punta del Este",
-                            Name = "San Fernando 2026",
-                            StartDate = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            EventId = 5,
-                            CreatedAt = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Media Maratón anual de Montevideo.",
-                            EndDate = new DateTime(2026, 8, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "Montevideo",
-                            Name = "Half Marathon",
-                            StartDate = new DateTime(2026, 8, 3, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -468,78 +431,6 @@ namespace SportEventManager.Migrations
                             MaxParticipants = 80,
                             Name = "5K Junior",
                             StartTime = new DateTime(2025, 12, 1, 8, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 3,
-                            DistanceKm = 10.0,
-                            EventId = 2,
-                            MaxParticipants = 1000,
-                            Name = "10K",
-                            StartTime = new DateTime(2025, 11, 8, 17, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 4,
-                            DistanceKm = 5.0,
-                            EventId = 2,
-                            MaxParticipants = 1000,
-                            Name = "5 k",
-                            StartTime = new DateTime(2025, 11, 8, 17, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 5,
-                            DistanceKm = 10.0,
-                            EventId = 3,
-                            MaxParticipants = 1000,
-                            Name = "10k",
-                            StartTime = new DateTime(2025, 11, 29, 18, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 6,
-                            DistanceKm = 5.0,
-                            EventId = 3,
-                            MaxParticipants = 1000,
-                            Name = "5k",
-                            StartTime = new DateTime(2025, 11, 29, 18, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 7,
-                            DistanceKm = 10.0,
-                            EventId = 4,
-                            MaxParticipants = 4500,
-                            Name = "10k",
-                            StartTime = new DateTime(2026, 1, 10, 20, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 8,
-                            DistanceKm = 5.0,
-                            EventId = 4,
-                            MaxParticipants = 4500,
-                            Name = "5k",
-                            StartTime = new DateTime(2026, 1, 10, 20, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 9,
-                            DistanceKm = 2.0,
-                            EventId = 4,
-                            MaxParticipants = 1000,
-                            Name = "San Fernandito",
-                            StartTime = new DateTime(2026, 1, 10, 12, 0, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            RaceId = 10,
-                            DistanceKm = 21.0,
-                            EventId = 5,
-                            MaxParticipants = 4500,
-                            Name = "21k",
-                            StartTime = new DateTime(2026, 8, 3, 9, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -565,11 +456,6 @@ namespace SportEventManager.Migrations
                         },
                         new
                         {
-                            RaceId = 1,
-                            CategoryId = 4
-                        },
-                        new
-                        {
                             RaceId = 2,
                             CategoryId = 3
                         },
@@ -577,71 +463,6 @@ namespace SportEventManager.Migrations
                         {
                             RaceId = 2,
                             CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 3,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 3,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 4,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 4,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 5,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 5,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 6,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 6,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 7,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 7,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 8,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            RaceId = 8,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            RaceId = 9,
-                            CategoryId = 5
                         });
                 });
 
@@ -881,7 +702,7 @@ namespace SportEventManager.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SplitId"));
 
-                    b.Property<double>("KmMark")
+                    b.Property<double?>("KmMark")
                         .HasColumnType("float");
 
                     b.Property<int>("RaceId")
@@ -1011,7 +832,7 @@ namespace SportEventManager.Migrations
                             ChipId = 3,
                             RaceId = 2,
                             SplitId = 5,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 8, 30, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 4, 30, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
@@ -1019,58 +840,8 @@ namespace SportEventManager.Migrations
                             ChipId = 3,
                             RaceId = 2,
                             SplitId = 6,
-                            Timestamp = new DateTime(2025, 10, 15, 8, 16, 40, 0, DateTimeKind.Unspecified)
+                            Timestamp = new DateTime(2025, 10, 15, 8, 8, 40, 0, DateTimeKind.Unspecified)
                         });
-                });
-
-            modelBuilder.Entity("SportEventManager.Models.VerificationToken", b =>
-                {
-                    b.Property<int>("VerificationTokenId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VerificationTokenId"));
-
-                    b.Property<string>("CodeHash")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("Consumed")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ConsumedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ParticipantId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Purpose")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Salt")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("VerificationTokenId");
-
-                    b.HasIndex("Email", "Purpose", "Consumed", "ExpiresAt");
-
-                    b.ToTable("VerificationTokens");
                 });
 
             modelBuilder.Entity("UserAccount", b =>

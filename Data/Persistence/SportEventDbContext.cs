@@ -224,17 +224,21 @@ namespace SportEventManager.Data.Persistence
             );
 
             modelBuilder.Entity<Split>().HasData(
-                new Split { SplitId = 1, RaceId = 1, SplitName = "Km 5", KmMark = 5 },
-                new Split { SplitId = 2, RaceId = 1, SplitName = "Km 10", KmMark = 10 },
-                new Split { SplitId = 3, RaceId = 2, SplitName = "Km 2.5", KmMark = 2.5 },
-                new Split { SplitId = 4, RaceId = 2, SplitName = "Km 5", KmMark = 5 }
+                new Split { SplitId = 1, RaceId = 1, SplitName = "Km 0", KmMark = 0 },
+                new Split { SplitId = 2, RaceId = 1, SplitName = "Km 5", KmMark = 5 },
+                new Split { SplitId = 3, RaceId = 1, SplitName = "Km 10", KmMark = 10 },
+                new Split { SplitId = 4, RaceId = 2, SplitName = "Km 0", KmMark = 0 },
+                new Split { SplitId = 5, RaceId = 2, SplitName = "Km 2.5", KmMark = 2.5 },
+                new Split { SplitId = 6, RaceId = 2, SplitName = "Km 5", KmMark = 5 }
             );
 
             modelBuilder.Entity<TimeRecord>().HasData(
-                new TimeRecord { TimeRecordId = 1, ChipId = 1, RaceId = 1, SplitId = 1, Timestamp = new DateTime(2025, 10, 15, 08, 05, 00) },
-                new TimeRecord { TimeRecordId = 2, ChipId = 2, RaceId = 1, SplitId = 2, Timestamp = new DateTime(2025, 10, 15, 08, 10, 00) },
-                new TimeRecord { TimeRecordId = 3, ChipId = 3, RaceId = 2, SplitId = 3, Timestamp = new DateTime(2025, 10, 15, 08, 15, 00) },
-                new TimeRecord { TimeRecordId = 4, ChipId = 4, RaceId = 2, SplitId = 4, Timestamp = new DateTime(2025, 10, 15, 08, 20, 00) }
+                new TimeRecord { TimeRecordId = 1, ChipId = 1, RaceId = 1, SplitId = 1, Timestamp = new DateTime(2025, 10, 15, 08, 00, 00) },
+                new TimeRecord { TimeRecordId = 2, ChipId = 1, RaceId = 1, SplitId = 2, Timestamp = new DateTime(2025, 10, 15, 08, 20, 30) },
+                new TimeRecord { TimeRecordId = 3, ChipId = 1, RaceId = 1, SplitId = 3, Timestamp = new DateTime(2025, 10, 15, 08, 40, 40) },
+                new TimeRecord { TimeRecordId = 4, ChipId = 3, RaceId = 2, SplitId = 4, Timestamp = new DateTime(2025, 10, 15, 08, 00, 00) },
+                new TimeRecord { TimeRecordId = 5, ChipId = 3, RaceId = 2, SplitId = 5, Timestamp = new DateTime(2025, 10, 15, 08, 08, 30) },
+                new TimeRecord { TimeRecordId = 6, ChipId = 3, RaceId = 2, SplitId = 6, Timestamp = new DateTime(2025, 10, 15, 08, 16, 40) }
             );
         }
     }

@@ -1,5 +1,5 @@
+using SportEventManager.DTOs;
 using SportEventManager.Models;
-using SportEventManager.DTOs; 
 
 namespace SportEventManager.Core
 {
@@ -9,9 +9,14 @@ namespace SportEventManager.Core
     Task<List<Race>> GetRacesByEventIdAsync(int eventId);
     Task<Race?> GetRaceByIdAsync(int raceId);
     Task<RaceDTO?> GetRaceDTOByIdAsync(int raceId);
+    Task<RaceDTO?> GetRaceDTOByIdWithTimeRecordDTOAsync(int raceId);
     Task AddRaceAsync(Race race);
     Task UpdateRaceAsync(Race race);
     Task DeleteRaceAsync(int raceId);
-    Task<Race?> GetByIdAsync(int raceId); // Alias para compatibilidad
+
+    Task<List<RaceDTO>> GetLiveRacing();
+    Task UpdateRaceStatusAsync(int raceId, int bibNumber, double distanceKm);
+    Task NotifyRaceStartedAsync(int splitId);
+
   }
 }

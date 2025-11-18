@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using SportEventManager.Core;
 using SportEventManager.Models;
 
-namespace SportEventManager.Services
+namespace SportEventManager.Core.Services
 {
     public class OtpVerificationService : IVerificationService
     {
@@ -25,7 +25,7 @@ namespace SportEventManager.Services
         {
             await _tokens.InvalidateActiveAsync(email, purpose);
 
-            var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString(); // 6 dígitos
+            var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString(); // 6 dï¿½gitos
             var salt = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
             var hash = Hash(code, salt);
 
@@ -45,10 +45,10 @@ namespace SportEventManager.Services
 
             await _email.SendAsync(
                 email,
-                "Código de verificación",
-                $"Tu código de verificación es: {code}. Vence en 10 minutos.");
+                "Cï¿½digo de verificaciï¿½n",
+                $"Tu cï¿½digo de verificaciï¿½n es: {code}. Vence en 10 minutos.");
 
-            _logger.LogInformation("OTP generado para {Email}, propósito {Purpose}", email, purpose);
+            _logger.LogInformation("OTP generado para {Email}, propï¿½sito {Purpose}", email, purpose);
         }
 
         public async Task<bool> ValidateOtpAsync(string email, string purpose, string code)

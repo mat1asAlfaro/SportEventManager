@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using SportEventManager.Components;
 using SportEventManager.Core;
+using SportEventManager.Core.Services;
 using SportEventManager.Data;
 using SportEventManager.Data.Persistence;
 using SportEventManager.Models;
+using SportEventManager.Controllers;
+using Microsoft.AspNetCore.ResponseCompression;
 using Radzen;
-using SportEventManager.Services;
 using SportEventManager.Hubs;
 using SportEventManager.DTOs;
 
@@ -16,6 +19,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddControllers();
+
+// Servicio singleton para notificaciones en tiempo real
+builder.Services.AddSingleton<RaceUpdateService>();
 
 builder.Services.AddRadzenComponents();
 
@@ -68,22 +75,23 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-app.UseAntiforgery();
+
+app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseAntiforgery();
+
+app.MapControllers();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Mapear OpenAPI
-app.MapOpenApi();
-
-// Mapear el Hub de SignalR
 app.MapHub<TimingHub>("/timingHub");
+app.MapOpenApi();
 
 // ========================================
 // MINIMAL API for RFID timing registration
@@ -91,6 +99,7 @@ app.MapHub<TimingHub>("/timingHub");
 
 app.MapPost("/api/timing/register", async (
     ChipReadingDTO reading,
+    ITimeRecordRepository timeRecordRepository,
     IChipReadingQueueService queueService,
     ILogger<Program> logger) =>
 {
@@ -105,8 +114,8 @@ app.MapPost("/api/timing/register", async (
         await queueService.EnqueueAsync(reading);
 
         logger.LogInformation($"Chip reading accepted and queued: ChipId {reading.ChipId}, SplitId {reading.SplitId}");
-        return Results.Accepted("/api/timing/register", new 
-        { 
+        return Results.Accepted("/api/timing/register", new
+        {
             message = "Chip reading accepted and queued for processing",
             chipId = reading.ChipId,
             splitId = reading.SplitId,

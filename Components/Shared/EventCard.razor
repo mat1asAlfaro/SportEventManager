@@ -142,9 +142,6 @@
   [Parameter] public EventCallback<(int EventId, int RaceId)> OnEditRace { get; set; }
   [Parameter] public EventCallback<(int EventId, int RaceId)> OnDeleteRace { get; set; }
 
-  private ElementReference RacesContainer;
-  private string RacesScrollClass = "";
-
   private string GetEventStatusLabel() => Event.StatusLabel;
 
   private string GetEventStatusBadgeClass() =>

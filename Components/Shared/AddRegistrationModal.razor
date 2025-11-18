@@ -27,36 +27,10 @@
             <ValidationMessage For="@(() => NewParticipant.DocumentNumber)" />
           </div>
 
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold">Nombre</label>
-              <InputText type="numeric" class="form-control placeholder-white" placeholder="Ej: Juan"
-                @bind-Value="NewParticipant.FirstName" />
-              <ValidationMessage For="@(() => NewParticipant.FirstName)" />
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold">Apellido</label>
-              <InputText type="text" class="form-control placeholder-white" placeholder="Ej: Pérez"
-                @bind-Value="NewParticipant.LastName" />
-              <ValidationMessage For="@(() => NewParticipant.LastName)" />
-            </div>
-          </div>
-
-          <div class="row g-3 mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold">Email</label>
-              <InputText type="email" class="form-control placeholder-white" placeholder="nombre@correo.com"
-                @bind-Value="NewParticipant.Email" />
-              <ValidationMessage For="@(() => NewParticipant.Email)" />
-            </div>
-
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold">Fecha de Nacimiento</label>
-              <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" Min="@MinBirthDate"
-                Max="@MaxBirthDate" />
-              <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
-            </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Fecha de Nacimiento</label>
+            <InputDate class="form-control custom-datetime" @bind-Value="NewParticipant.Birthdate" />
+            <ValidationMessage For="@(() => NewParticipant.Birthdate)" />
           </div>
 
           <div class="mb-3">

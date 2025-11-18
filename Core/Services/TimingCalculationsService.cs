@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SportEventManager.Models;
 
-namespace SportEventManager.Services
+namespace SportEventManager.Core.Services
 {
     public interface ITimingCalculationsService
     {

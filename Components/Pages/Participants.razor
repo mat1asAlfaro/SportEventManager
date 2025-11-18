@@ -178,7 +178,6 @@
                 </RadzenBadge>
               }
               else
-              @*if (r.Status == "assigned")*@
               {
                 <RadzenBadge Class="badge kit-badge kit-badge-delivered">
                   <span class="material-symbols-outlined fs-6 me-1">task_alt</span>
@@ -198,7 +197,6 @@
                 </RadzenBadge>
               }
               else
-              @*if (r.Status == "assigned")*@
               {
                 <RadzenBadge Class="badge kit-badge kit-badge-delivered">
                   <span class="material-symbols-outlined fs-6 me-1">deployed_code</span>
@@ -219,7 +217,6 @@
                 </RadzenButton>
               }
               else
-              @*if (r.Status == "assigned")*@
               {
                 <RadzenButton Disabled="@isProcessing" Class="btn-size btn-error"
                   Click="@(async () => await RemoveBibNumber(r))">

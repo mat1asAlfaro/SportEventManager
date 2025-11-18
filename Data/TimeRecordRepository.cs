@@ -4,7 +4,7 @@ using SportEventManager.Core;
 using SportEventManager.Data.Persistence;
 using SportEventManager.Hubs;
 using SportEventManager.Models;
-using SportEventManager.Services;
+using SportEventManager.Core.Services;
 using SportEventManager.DTOs;
 
 namespace SportEventManager.Data
@@ -139,7 +139,6 @@ namespace SportEventManager.Data
 
                 var raceId = split.RaceId;
 
-                // Evitar registros duplicados
                 var existingRecord = await GetByChipAndSplitAsync(reading.ChipId, reading.SplitId);
                 if (existingRecord != null)
                 {
@@ -183,7 +182,7 @@ namespace SportEventManager.Data
 
         public async Task<RaceStatsDTO> GetRaceStatsAsync(int raceId)
         {
-            var race = await _raceRepo.GetByIdAsync(raceId);
+            var race = await _raceRepo.GetRaceByIdAsync(raceId);
             if (race == null)
                 return new RaceStatsDTO { RaceId = raceId };
 
@@ -215,70 +214,230 @@ namespace SportEventManager.Data
             return stats;
         }
 
+        private async Task<int> CalculateCurrentPosition(int raceId, double distanceCompleted, TimeSpan? elapsedTime)
+        {
+            var allRunners = await _context.Registrations
+                .Where(r => r.RaceId == raceId)
+                .Include(r => r.RegistrationChips)
+                .Select(r => new
+                {
+                    r.BibNumber,
+                    ChipIds = r.RegistrationChips!.Select(c => c.ChipId).ToList()
+                })
+                .ToListAsync();
+
+            var runnerStats = new List<(int Bib, double Distance, TimeSpan Time)>();
+
+            foreach (var runner in allRunners)
+            {
+                if (!runner.ChipIds.Any()) continue;
+
+                var records = await _context.TimeRecords
+                    .Include(tr => tr.Split)
+                    .Where(tr => runner.ChipIds.Contains(tr.ChipId) &&
+                                 tr.Split != null &&
+                                 tr.Split.RaceId == raceId)
+                    .OrderBy(tr => tr.Timestamp)
+                    .ToListAsync();
+
+                if (!records.Any()) continue;
+
+                double km = records.Last().Split?.KmMark ?? 0;
+                TimeSpan time = records.Last().Timestamp - records.First().Timestamp;
+
+                runnerStats.Add((runner.BibNumber ?? 0, km, time));
+            }
+
+            var ordered = runnerStats
+                .OrderByDescending(r => r.Distance)
+                .ThenBy(r => r.Time)
+                .ToList();
+
+            var pos = ordered.FindIndex(r =>
+                Math.Abs(r.Distance - distanceCompleted) < 0.001 &&
+                r.Time == elapsedTime) + 1;
+
+            return pos > 0 ? pos : ordered.Count;
+        }
+
         public async Task<LiveParticipantDataDTO?> GetLiveParticipantDataByBibAsync(int raceId, int bibNumber)
         {
+            // ============
+            // 1. Obtener inscripción
+            // ============
             var registration = await _context.Registrations
                 .Include(r => r.Participant)
                 .Include(r => r.Category)
-                .Include(r => r.Race)
+                .Include(r => r.Race).ThenInclude(r => r!.Event)
                 .Include(r => r.RegistrationChips)
-                .FirstOrDefaultAsync(r => r.RaceId == raceId && r.BibNumber.HasValue && r.BibNumber.Value == bibNumber);
+                .FirstOrDefaultAsync(r =>
+                    r.RaceId == raceId &&
+                    r.BibNumber == bibNumber);
 
             if (registration == null)
-            {
-                _logger.LogWarning($"No registration found for bib {bibNumber} in race {raceId}");
                 return null;
-            }
 
             var dto = new LiveParticipantDataDTO
             {
                 ParticipantName = $"{registration.Participant?.FirstName} {registration.Participant?.LastName}".Trim(),
+                EventName = registration.Race?.Event?.Name ?? "N/A",
                 BibNumber = bibNumber,
                 RaceName = registration.Race?.Name ?? "N/A",
-                CategoryName = registration.Category?.ExternalName ?? registration.Category?.InternalName ?? "N/A",
-                Status = "No iniciado",
-                DistanceCompleted = 0
+                CategoryName = registration.Category?.ExternalName ??
+                               registration.Category?.InternalName ?? "N/A",
+                Status = "No iniciado"
             };
 
-            var chipIds = registration.RegistrationChips?.Select(rc => rc.ChipId).ToList() ?? new List<int>();
+            double totalRaceKm = registration.Race?.DistanceKm ?? 0;
+
+            // ============
+            // 2. Chips
+            // ============
+            var chipIds = registration.RegistrationChips?.Select(c => c.ChipId).ToList() ?? new();
 
             if (!chipIds.Any())
-            {
-                _logger.LogWarning($"No chips assigned to bib {bibNumber}");
                 return dto;
-            }
 
+            // ============
+            // 3. TimeRecords + Splits
+            // ============
             var timeRecords = await _context.TimeRecords
+                .Where(tr => chipIds.Contains(tr.ChipId) &&
+                             tr.Split != null &&
+                             tr.Split.RaceId == raceId)
                 .Include(tr => tr.Split)
-                .Where(tr => chipIds.Contains(tr.ChipId) && tr.Split != null && tr.Split.RaceId == raceId)
                 .OrderBy(tr => tr.Timestamp)
                 .ToListAsync();
 
             if (!timeRecords.Any())
                 return dto;
 
-            var firstRecord = timeRecords.First();
-            var lastRecord = timeRecords.Last();
+            var first = timeRecords.First();
+            var last = timeRecords.Last();
 
-            dto.ElapsedTime = lastRecord.Timestamp - firstRecord.Timestamp;
-            dto.DistanceCompleted = lastRecord.Split?.KmMark ?? 0;
+            dto.DistanceCompleted = last.Split?.KmMark ?? 0;
+            dto.ElapsedTime = last.Timestamp - first.Timestamp;
 
-            // Calcular ritmo promedio
-            if (dto.DistanceCompleted > 0)
+            // ============
+            // Ritmo promedio
+            // ============
+            if (dto.DistanceCompleted > 0 && dto.ElapsedTime.Value.TotalSeconds > 0)
             {
-                var totalMinutes = dto.ElapsedTime.Value.TotalMinutes;
-                var avgPaceMinutes = totalMinutes / dto.DistanceCompleted;
-                dto.AveragePace = TimeSpan.FromMinutes(avgPaceMinutes);
+                var avgMin = dto.ElapsedTime.Value.TotalMinutes / dto.DistanceCompleted;
+                dto.AveragePace = TimeSpan.FromMinutes(avgMin);
             }
 
-            // Determinar estado
-            var totalSplits = await _context.Splits.CountAsync(s => s.RaceId == raceId);
-            var completedSplits = timeRecords.Count;
+            // ============
+            // Ritmo actual
+            // ============
+            if (timeRecords.Count >= 2)
+            {
+                var prev = timeRecords[^2];
+                var curr = timeRecords[^1];
 
-            if (completedSplits == totalSplits)
-                dto.Status = "Finalizado";
-            else if (completedSplits > 0)
-                dto.Status = "En Carrera";
+                double kmDiff = (curr.Split?.KmMark ?? 0) - (prev.Split?.KmMark ?? 0);
+                double minDiff = (curr.Timestamp - prev.Timestamp).TotalMinutes;
+
+                if (kmDiff > 0 && minDiff > 0)
+                    dto.CurrentPace = TimeSpan.FromMinutes(minDiff / kmDiff);
+            }
+
+            // ============
+            // 4. Splits
+            // ============
+            var splitList = await _context.Splits
+                .Where(s => s.RaceId == raceId)
+                .OrderBy(s => s.KmMark)
+                .ToListAsync();
+
+            int completedSplits = timeRecords.Select(tr => tr.SplitId).Distinct().Count();
+            int totalSplits = splitList.Count;
+
+            // ============
+            // Estado
+            // ============
+            dto.Status = completedSplits switch
+            {
+                0 => "No iniciado",
+                _ when dto.DistanceCompleted >= totalRaceKm => "Finalizado",
+                _ => "En Carrera"
+            };
+
+            // ============
+            // Posición actual
+            // ============
+            dto.CurrentPosition = await CalculateCurrentPosition(
+                raceId,
+                dto.DistanceCompleted,
+                dto.ElapsedTime
+            );
+
+            // ============
+            // Porcentajes
+            // ============
+            dto.ProgressPercentage =
+                totalRaceKm > 0 ? Math.Round(dto.DistanceCompleted / totalRaceKm * 100, 2) : 0;
+
+            dto.SplitsPercentage =
+                totalSplits > 0 ? Math.Round((double)completedSplits / totalSplits * 100, 2) : 0;
+
+            // ============
+            // Progreso por split
+            // ============
+            dto.SplitsProgress = splitList.Select(sp =>
+            {
+                var tr = timeRecords.FirstOrDefault(t => t.SplitId == sp.SplitId);
+
+                return new SplitProgressDTO
+                {
+                    SplitName = sp.SplitName,
+                    KmMark = sp.KmMark,
+                    Passed = tr != null,
+                    Timestamp = tr?.Timestamp
+                };
+            }).ToList();
+
+            // ============
+            // 5. ETA
+            // ============
+            if (dto.DistanceCompleted > 0 && dto.DistanceCompleted < totalRaceKm)
+            {
+                double kmLeft = totalRaceKm - dto.DistanceCompleted;
+                var pace = dto.CurrentPace ?? dto.AveragePace;
+
+                if (pace is not null && pace.Value.TotalMinutes > 0)
+                {
+                    dto.EstimatedTimeToFinish = TimeSpan.FromMinutes(pace.Value.TotalMinutes * kmLeft);
+                    dto.EstimatedFinishDateTime = DateTime.UtcNow + dto.EstimatedTimeToFinish;
+                }
+
+                dto.DistanceLeft = kmLeft;
+            }
+
+            // ============
+            // 6. Interpolación
+            // ============
+            var lastRecord = last;
+            double lastKm = lastRecord.Split?.KmMark ?? 0;
+            var interpolationPace = dto.CurrentPace ?? dto.AveragePace;
+            splitList = splitList.OrderBy(s => s.KmMark).ToList();
+
+            if (interpolationPace is null || interpolationPace.Value.TotalMinutes <= 0)
+            {
+                dto.InterpolatedDistance = lastKm;
+            }
+            else
+            {
+                double minutesSince = (DateTime.UtcNow - lastRecord.Timestamp).TotalMinutes;
+                double kmExtra = minutesSince / interpolationPace.Value.TotalMinutes;
+
+                double interp = Math.Min(lastKm + kmExtra, lastKm);
+                dto.InterpolatedDistance = Math.Min(interp, totalRaceKm);
+            }
+
+
+            dto.ProgressPercentageInterpolated =
+                totalRaceKm > 0 ? Math.Round(dto.InterpolatedDistance / totalRaceKm * 100, 2) : 0;
 
             return dto;
         }

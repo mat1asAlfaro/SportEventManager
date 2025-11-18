@@ -1,6 +1,6 @@
 using SportEventManager.DTOs;
 
-namespace SportEventManager.Services;
+namespace SportEventManager.Core.Services;
 
 public interface IChipReadingQueueService
 {
