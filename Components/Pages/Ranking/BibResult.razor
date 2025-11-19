@@ -1,0 +1,281 @@
+@page "/rankings/bib/{RaceId:int}/{BibNumber:int}"
+@using SportEventManager.Core
+@using SportEventManager.DTOs
+@rendermode InteractiveServer
+
+@inject ITimeRecordRepository TimeRecordRepository
+@inject NavigationManager Navigation
+
+<PageTitle>Resultado - Dorsal @BibNumber</PageTitle>
+
+<div class="container-live">
+  <div class="container-lg px-4 px-sm-5 px-lg-4">
+
+    @* Header *@
+    <div
+      class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary fs-3">emoji_events</span>
+          <h1 class="fs-3 fw-bold text-primary mb-2">Resultado de Carrera</h1>
+        </div>
+        <p class="text-secondary mb-0">Consulta el resultado detallado del participante</p>
+      </div>
+      <button class="btn btn-secondary btn-lg d-flex align-items-center gap-2 bg-transparent border fs-6 fw-semibold"
+        @onclick="GoBack">
+        <span class="material-symbols-outlined fs-5">keyboard_return</span>
+        Volver
+      </button>
+    </div>
+
+    @if (isLoading)
+    {
+      <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body text-center py-5">
+          <div class="spinner-border text-primary slow-spinner" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-3 text-secondary">Cargando resultados...</p>
+        </div>
+      </div>
+    }
+    else if (participantResult is not null)
+    {
+
+      <div class="live-header mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="fw-bold fs-1 text-primary-color">#@participantResult.BibNumber</div>
+
+            <div>
+              <h3 class="fw-semibold mb-1">@participantResult.ParticipantName</h3>
+
+              <div class="d-flex align-items-center text-secondary small gap-2">
+                <span class="material-symbols-outlined fs-5">trophy</span>
+                <span>@participantResult.DistanceKm km</span>
+                <span class="mx-1">•</span>
+                <span>@participantResult.EventName</span>
+                <span class="mx-1">•</span>
+                <span>@participantResult.CategoryName</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge @GetStatusBadgeClass()">@participantResult.Status</span>
+          </div>
+
+        </div>
+      </div>
+
+      @if (participantResult.Status == "Finalizado")
+      {
+        <div class="stats-grid mb-4">
+          <StatsCard Title="Posición General" Value="@(participantResult.OverallPosition?.ToString() ?? "-")"
+            Description=@($"de {participantResult.TotalParticipants} participantes") Icon="trophy" IconClass="fs-5"
+            IconColor="text-primary-color" ValueColor="text-primary" />
+
+          <StatsCard Title="Posición en Categoría" Value="@(participantResult.CategoryPosition?.ToString() ?? "-")"
+            Description=@($"de {participantResult.TotalInCategory} en {participantResult.CategoryName}")
+            Icon="workspace_premium" IconClass="fs-5" ValueColor="text-primary" />
+
+          <StatsCard Title="Tiempo Total" Value="@participantResult.TotalTimeFormatted" Description="desde inicio a meta"
+            Icon="timer" IconStyle="Outlined" IconClass="fs-5" ValueColor="text-primary" />
+
+          <StatsCard Title="Ritmo Promedio" Value="@participantResult.AveragePaceFormatted" Description="min/km"
+            Icon="speed" IconClass="fs-5" IconColor="text-success" ValueColor="text-primary" />
+        </div>
+
+        <div class="two-col-grid mb-4">
+          <div class="card-live">
+            <h5 class="fw-semibold mb-4 text-primary">Tiempos Parciales</h5>
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="material-symbols-outlined fs-6 text-primary">flag</span>
+              <span class="text-secondary small fw-semibold">Puntos de Control</span>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+              @foreach (var (split, index) in participantResult.SplitTimes.Select((s, i) => (s, i + 1)))
+              {
+                <div class="bg-card-split p-3 rounded-3">
+                  <div class="d-flex justify-content-between align-items-start">
+
+                    <div class="d-flex align-items-start gap-3 flex-grow-1">
+                      <div
+                        class="rounded-circle d-flex align-items-center justify-content-center fw-bold @(split.Timestamp.HasValue ? "text-primary" : "text-dark")"
+                        style="width:32px;height:32px;min-width:32px;background-color:@(split.Timestamp.HasValue ? "rgba(25,135,84,0.4)" : "rgba(108,117,125,1)")">
+                        <span class="small">@index</span>
+                      </div>
+
+                      <div class="flex-grow-1">
+                        <div class="fw-bold">@split.SplitName</div>
+                        <small class="text-secondary">@split.KmMark km</small>
+
+                        @if (split.Timestamp.HasValue)
+                        {
+                          <div class="mt-2">
+                            <small class="text-secondary">Tiempo desde inicio: </small>
+                            <small class="text-primary fw-semibold">@split.TimeFromStartFormatted</small>
+                          </div>
+
+                          @if (split.SplitTime.HasValue)
+                          {
+                            <div>
+                              <small class="text-secondary">Tiempo parcial: </small>
+                              <small class="text-primary fw-semibold">@split.SplitTimeFormatted</small>
+                            </div>
+                          }
+
+                          @if (split.PositionAtSplit.HasValue)
+                          {
+                            <div>
+                              <small class="text-secondary">Posición: </small>
+                              <small class="text-primary fw-semibold">#@split.PositionAtSplit</small>
+                            </div>
+                          }
+                        }
+                      </div>
+                    </div>
+
+                    @if (split.Timestamp.HasValue)
+                    {
+                      <div class="text-end">
+                        <small class="text-secondary">@split.TimestampFormatted</small>
+                      </div>
+                    }
+
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="card-live">
+            <h5 class="fw-semibold mb-2 text-primary">Resumen de Rendimiento</h5>
+            <span class="text-secondary small fw-semibold">Basado en tiempos de chip RFID</span>
+
+            <div class="bg-card-split p-3 rounded-3 mt-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="material-symbols-outlined fs-6 text-primary-color">trophy</span>
+                  <span class="text-primary fw-semibold small">Posición Final</span>
+                </div>
+              </div>
+              <div class="h2 fw-bold m-0">#@(participantResult.OverallPosition?.ToString() ?? "-")</div>
+              <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+                de @participantResult.TotalParticipants participantes
+              </span>
+            </div>
+
+            <div class="bg-card-split p-3 rounded-3 mt-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="material-symbols-outlined fs-6 text-success">workspace_premium</span>
+                  <span class="text-primary fw-semibold small">Posición en Categoría</span>
+                </div>
+              </div>
+              <div class="h2 fw-bold m-0">#@(participantResult.CategoryPosition?.ToString() ?? "-")</div>
+              <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+                @participantResult.CategoryName - @participantResult.TotalInCategory participantes
+              </span>
+            </div>
+
+            <div class="bg-card-split p-3 rounded-3 mt-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="material-symbols-outlined fs-6 text-secondary-color">timer</span>
+                  <span class="text-primary fw-semibold small">Tiempo Total</span>
+                </div>
+              </div>
+              <div class="h2 fw-bold m-0">@participantResult.TotalTimeFormatted</div>
+              <span class="text-secondary fw-semibold small" style="font-size: 12px;">
+                Ritmo promedio: @participantResult.AveragePaceFormatted /km
+              </span>
+            </div>
+
+            <hr>
+
+            <div class="d-flex align-items-center gap-2 flex-nowrap">
+              <span class="material-symbols-outlined fs-6 text-secondary" style="line-height: 1; margin-top: 2px;">
+                info
+              </span>
+              <span class="text-secondary small" style="font-size: 12px;">
+                Los tiempos son registrados automáticamente mediante chips RFID en cada punto de control
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+      else if (participantResult.Status == "En Carrera")
+      {
+        <div class="alert alert-info d-flex align-items-center gap-2">
+          <span class="material-symbols-outlined">info</span>
+          <span>Este participante aún está en carrera. Los resultados completos se mostrarán cuando finalice.</span>
+        </div>
+      }
+      else
+      {
+        <div class="alert alert-warning d-flex align-items-center gap-2">
+          <span class="material-symbols-outlined">warning</span>
+          <span>Este participante no ha iniciado la carrera o no tiene registros de tiempo.</span>
+        </div>
+      }
+    }
+    else if (!isLoading)
+    {
+      <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body text-center py-5">
+          <span class="material-symbols-outlined mb-3 text-warning" style="font-size: 64px;">search_off</span>
+          <h3 class="fw-bold mb-2 text-primary">No se encontraron resultados</h3>
+          <p class="text-secondary mb-4">
+            No se encontró ningún participante con el dorsal #@BibNumber en esta carrera.
+          </p>
+          <button class="btn btn-primary d-inline-flex align-items-center gap-2" @onclick="GoBack">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Volver a buscar</span>
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>
+
+@code {
+  [Parameter] public int RaceId { get; set; }
+  [Parameter] public int BibNumber { get; set; }
+
+  private ParticipantRaceResultDTO? participantResult;
+  private bool isLoading = true;
+
+  protected override async Task OnParametersSetAsync()
+  {
+    isLoading = true;
+    participantResult = null;
+
+    await Task.Delay(300);
+
+    participantResult = await TimeRecordRepository
+    .GetParticipantRaceResultByBibAsync(RaceId, BibNumber);
+
+    isLoading = false;
+  }
+
+  private void GoBack()
+  {
+    Navigation.NavigateTo("/rankings");
+  }
+
+  private string GetStatusBadgeClass()
+  {
+    return participantResult?.Status switch
+    {
+      "Finalizado" => "status-badge-finalized",
+      "En Carrera" => "status-badge-running",
+      "No iniciado" => "status-badge-notstarted",
+      _ => "status-badge-default"
+    };
+  }
+}

@@ -442,6 +442,162 @@ namespace SportEventManager.Data
             return dto;
         }
 
+        public async Task<ParticipantRaceResultDTO?> GetParticipantRaceResultByBibAsync(int raceId, int bibNumber)
+        {
+            var race = await _raceRepo.GetByIdAsync(raceId);
+            if (race == null)
+            {
+                _logger.LogWarning($"Race {raceId} not found");
+                return null;
+            }
+
+            var eventName = await _context.Events
+                .Where(e => e.EventId == race.EventId)
+                .Select(e => e.Name)
+                .FirstOrDefaultAsync();
+
+            var registration = await _context.Registrations
+                .Include(r => r.Participant)
+                .Include(r => r.Category)
+                .Include(r => r.RegistrationChips)
+                .FirstOrDefaultAsync(r => r.RaceId == raceId && r.BibNumber.HasValue && r.BibNumber.Value == bibNumber);
+
+            if (registration == null)
+            {
+                _logger.LogWarning($"No registration found for bib {bibNumber} in race {raceId}");
+                return null;
+            }
+
+            var result = new ParticipantRaceResultDTO
+            {
+                ParticipantName = $"{registration.Participant?.FirstName} {registration.Participant?.LastName}".Trim(),
+                BibNumber = bibNumber,
+                RaceName = race.Name ?? "N/A",
+                EventName = eventName ?? "N/A",
+                CategoryName = registration.Category?.ExternalName ?? registration.Category?.InternalName ?? "N/A",
+                DistanceKm = race.DistanceKm,
+                Status = "No iniciado"
+            };
+
+            var chipIds = registration.RegistrationChips?.Select(rc => rc.ChipId).ToList() ?? new List<int>();
+
+            if (!chipIds.Any())
+            {
+                _logger.LogWarning($"No chips assigned to bib {bibNumber}");
+                return result;
+            }
+
+            var splits = await _splitRepo.GetByRaceIdAsync(raceId);
+            var splitsList = splits.OrderBy(s => s.KmMark).ToList();
+
+            if (!splitsList.Any())
+            {
+                _logger.LogWarning($"No splits found for race {raceId}");
+                return result;
+            }
+
+            var timeRecords = await _context.TimeRecords
+                .Include(tr => tr.Split)
+                .Where(tr => chipIds.Contains(tr.ChipId) && tr.Split != null && tr.Split.RaceId == raceId)
+                .OrderBy(tr => tr.Timestamp)
+                .ToListAsync();
+
+            if (!timeRecords.Any())
+            {
+                return result;
+            }
+
+            var firstRecord = timeRecords.First();
+            var lastRecord = timeRecords.Last();
+
+            DateTime? previousTimestamp = null;
+            foreach (var split in splitsList)
+            {
+                var splitRecord = timeRecords.FirstOrDefault(tr => tr.SplitId == split.SplitId);
+                
+                var splitTimeDTO = new SplitTimeDTO
+                {
+                    SplitId = split.SplitId,
+                    SplitName = split.SplitName ?? "N/A",
+                    KmMark = split.KmMark
+                };
+
+                if (splitRecord != null)
+                {
+                    splitTimeDTO.Timestamp = splitRecord.Timestamp;
+                    splitTimeDTO.TimeFromStart = splitRecord.Timestamp - firstRecord.Timestamp;
+
+                    if (previousTimestamp.HasValue)
+                    {
+                        splitTimeDTO.SplitTime = splitRecord.Timestamp - previousTimestamp.Value;
+                    }
+
+                    var splitRecords = await GetBySplitIdAsync(split.SplitId);
+                    splitTimeDTO.PositionAtSplit = _calculationsService.CalculatePosition(splitRecords.ToList(), splitRecord.TimeRecordId);
+
+                    previousTimestamp = splitRecord.Timestamp;
+                }
+
+                result.SplitTimes.Add(splitTimeDTO);
+            }
+
+            result.TotalTime = lastRecord.Timestamp - firstRecord.Timestamp;
+
+            var distanceCompleted = lastRecord.Split?.KmMark ?? 0;
+            if (distanceCompleted > 0 && result.TotalTime.HasValue)
+            {
+                var totalMinutes = result.TotalTime.Value.TotalMinutes;
+                var avgPaceMinutes = totalMinutes / distanceCompleted;
+                result.AveragePace = TimeSpan.FromMinutes(avgPaceMinutes);
+            }
+
+            var completedSplits = timeRecords.Count;
+            var totalSplits = splitsList.Count;
+
+            if (completedSplits == totalSplits)
+                result.Status = "Finalizado";
+            else if (completedSplits > 0)
+                result.Status = "En Carrera";
+
+            if (lastRecord.Split != null)
+            {
+                var finalSplitRecords = await GetBySplitIdAsync(lastRecord.SplitId);
+                result.OverallPosition = _calculationsService.CalculatePosition(finalSplitRecords.ToList(), lastRecord.TimeRecordId);
+            }
+
+            var allRegistrations = await _registrationRepo.GetByRaceIdAsync(raceId);
+            result.TotalParticipants = allRegistrations.Count();
+            result.TotalInCategory = allRegistrations.Count(r => r.CategoryId == registration.CategoryId);
+
+            if (lastRecord.Split != null && result.OverallPosition.HasValue)
+            {
+                var categoryRegistrations = allRegistrations
+                    .Where(r => r.CategoryId == registration.CategoryId)
+                    .Select(r => r.RegistrationChips?.Select(rc => rc.ChipId))
+                    .Where(chips => chips != null)
+                    .SelectMany(chips => chips!)
+                    .ToList();
+
+                var categorySplitRecords = (await GetBySplitIdAsync(lastRecord.SplitId))
+                    .Where(tr => categoryRegistrations.Contains(tr.ChipId))
+                    .OrderBy(tr => tr.Timestamp)
+                    .ToList();
+
+                var position = 1;
+                foreach (var tr in categorySplitRecords)
+                {
+                    if (tr.TimeRecordId == lastRecord.TimeRecordId)
+                    {
+                        result.CategoryPosition = position;
+                        break;
+                    }
+                    position++;
+                }
+            }
+
+            return result;
+        }
+
         private async Task BroadcastTimeUpdate(TimeRecord record)
         {
             try
