@@ -22,5 +22,6 @@ namespace SportEventManager.Core
         Task<bool> RemoveBibNumberAsync(int registrationId);
         Task<int?> GetBibNumberAsync(int registrationId);
         Task<IEnumerable<Registration>> GetByRaceIdAsync(int raceId);
+        Task<int> CountByRaceIdAsync(int raceId);
     }
 }

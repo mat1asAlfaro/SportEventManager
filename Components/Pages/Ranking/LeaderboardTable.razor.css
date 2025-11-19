@@ -1,0 +1,31 @@
+.filter-box { min-width: 220px; max-width: 300px; }
+.leaderboard-spinner { width:3rem; height:3rem; }
+.error-icon, .notfound-icon { font-size:64px; }
+
+/* Podio: borde lateral por posición */
+.leaderboard-grid ::deep .leaderboard-row.row-place-1 { border-left: 4px solid #f6c344; }
+.leaderboard-grid ::deep .leaderboard-row.row-place-2 { border-left: 4px solid #c0c0c0; }
+.leaderboard-grid ::deep .leaderboard-row.row-place-3 { border-left: 4px solid #cd7f32; }
+
+/* Trofeos */
+.trophy-gold { color: #f6c344; }
+.trophy-silver { color: #c0c0c0; }
+.trophy-bronze { color: #cd7f32; }
+
+/* Buscador */
+.leaderboard-search {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: #2f343a;
+  padding: .4rem .6rem;
+  border-radius: .5rem;
+  color: #adb5bd;
+}
+
+.leaderboard-search input {
+  background: transparent;
+  border: 0;
+  color: #e9ecef;
+}
+.leaderboard-search input::placeholder { color: #9aa0a6; }

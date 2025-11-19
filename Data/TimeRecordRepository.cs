@@ -143,7 +143,7 @@ namespace SportEventManager.Data
                 if (existingRecord != null)
                 {
                     _logger.LogWarning($"Duplicate reading: ChipId {reading.ChipId} at SplitId {reading.SplitId}");
-                    return MapToResponseDTO(existingRecord);
+                    return await MapToResponseDTOAsync(existingRecord);
                 }
 
                 var timeRecord = new TimeRecord
@@ -160,7 +160,7 @@ namespace SportEventManager.Data
                 if (recordWithDetails == null)
                     return null;
 
-                var responseDTO = MapToResponseDTO(recordWithDetails);
+                var responseDTO = await MapToResponseDTOAsync(recordWithDetails);
                 await BroadcastTimeUpdate(recordWithDetails);
 
                 _logger.LogInformation($"Time recorded: ChipId {reading.ChipId}, SplitId {reading.SplitId}, RaceId {raceId}");
@@ -177,7 +177,12 @@ namespace SportEventManager.Data
         public async Task<List<TimeRecordResponseDTO>> GetTimeRecordsByRaceAsync(int raceId)
         {
             var records = await GetByRaceIdAsync(raceId);
-            return records.Select(MapToResponseDTO).ToList();
+            var list = new List<TimeRecordResponseDTO>();
+            foreach (var r in records)
+            {
+                list.Add(await MapToResponseDTOAsync(r));
+            }
+            return list;
         }
 
         public async Task<RaceStatsDTO> GetRaceStatsAsync(int raceId)
@@ -514,7 +519,7 @@ namespace SportEventManager.Data
             foreach (var split in splitsList)
             {
                 var splitRecord = timeRecords.FirstOrDefault(tr => tr.SplitId == split.SplitId);
-                
+
                 var splitTimeDTO = new SplitTimeDTO
                 {
                     SplitId = split.SplitId,
@@ -659,9 +664,9 @@ namespace SportEventManager.Data
             return null;
         }
 
-        private TimeRecordResponseDTO MapToResponseDTO(TimeRecord record)
+        private async Task<TimeRecordResponseDTO> MapToResponseDTOAsync(TimeRecord record)
         {
-            var registration = GetRegistrationByChipId(record.ChipId, record.RaceId).Result;
+            var registration = await GetRegistrationByChipId(record.ChipId, record.RaceId);
 
             return new TimeRecordResponseDTO
             {
