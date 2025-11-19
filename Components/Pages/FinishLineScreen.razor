@@ -43,16 +43,20 @@
                 <h1 class="race-name text-uppercase fw-bold text-light mb-0">@_raceName</h1>
             </div>
 
-            <div class="main-timer fw-bold font-monospace mb-4 mb-md-5">
-                @_elapsedRaceTime
-            </div>
+            @if (_timerVisible)
+            {
+                <div class="main-timer fw-bold font-monospace mb-4 mb-md-5 @(_isCountdown ? "text-warning" : "")">
+                    @_elapsedRaceTime
+                </div>
+            }
 
-            @if (_lastFinisher != null)
+            @if (_lastApproachingRunner != null)
             {
                 <div class="current-runner mb-4 mb-md-5">
-                    <div class="runner-name text-uppercase fw-bold text-light mb-3">@_lastFinisher.ParticipantName</div>
+                    <div class="runner-name text-uppercase fw-bold text-light mb-3">@_lastApproachingRunner.ParticipantName
+                    </div>
                     <div class="runner-bib fw-bold text-primary">
-                        # @_lastFinisher.BibNumber
+                        # @_lastApproachingRunner.BibNumber
                     </div>
                 </div>
             }
@@ -64,15 +68,17 @@
                 </div>
             }
 
-            @if (_finishers.Count > 1)
+            @if (_finishers.Count > 0)
             {
                 <div class="previous-runners mt-4 mt-md-5 mx-auto">
-                    @foreach (var finisher in _finishers.OrderByDescending(f => f.Timestamp).Skip(1).Take(3))
+                    @foreach (var finisher in _finishers.OrderByDescending(f => f.Timestamp).Take(3))
                     {
                         <div class="card bg-dark border-secondary mb-3">
-                            <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 py-3 px-4">
+                            <div
+                                class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 py-3 px-4">
                                 <div class="d-flex flex-column flex-md-row align-items-center gap-2 gap-md-3 flex-grow-1">
-                                    <span class="fw-semibold text-light text-truncate runner-name-small">@finisher.ParticipantName</span>
+                                    <span
+                                        class="fw-semibold text-light text-truncate runner-name-small">@finisher.ParticipantName</span>
                                     <span class="fw-bold text-primary runner-bib-small">
                                         # @finisher.BibNumber
                                     </span>
@@ -100,10 +106,13 @@
     private string? _raceName;
     private DateTime? _raceStartTime;
     private int? _prefinishSplitId;
+    private int? _finishSplitId;
     private string _elapsedRaceTime = "00:00:00";
+    private bool _timerVisible = false;
+    private bool _isCountdown = false;
 
     private List<FinisherData> _finishers = new();
-    private FinisherData? _lastFinisher;
+    private FinisherData? _lastApproachingRunner;
 
     protected override async Task OnInitializedAsync()
     {
@@ -154,8 +163,47 @@
 
             if (_raceStartTime.HasValue)
             {
-                var elapsed = DateTime.Now - _raceStartTime.Value;
-                _elapsedRaceTime = $"{elapsed:hh\\:mm\\:ss}";
+                var now = DateTime.Now;
+                var startTime = _raceStartTime.Value;
+                var maxDuration = TimeSpan.FromHours(24);
+
+                // Si la carrera ha estado en curso por demasiado tiempo, detener el temporizador
+                if (now - startTime > maxDuration)
+                {
+                    if (_raceTimer != null)
+                    {
+                        await _raceTimer.DisposeAsync();
+                        _raceTimer = null;
+                    }
+                    return;
+                }
+
+                // 1. No es hoy -> Ocultar
+                if (startTime.Date != now.Date)
+                {
+                    _timerVisible = false;
+                }
+                //2. Hoy > 1 hora -> Ocultar
+                else if (startTime > now.AddHours(1))
+                {
+                    _timerVisible = false;
+                }
+                // 3. Contador regresivo (< 1 hora)
+                else if (startTime > now)
+                {
+                    var remaining = startTime - now;
+                    _elapsedRaceTime = $"{remaining:hh\\:mm\\:ss}";
+                    _timerVisible = true;
+                    _isCountdown = true;
+                }
+                // 4. Tiempo transcurrido (Iniciada)
+                else
+                {
+                    var elapsed = now - startTime;
+                    _elapsedRaceTime = $"{elapsed:hh\\:mm\\:ss}";
+                    _timerVisible = true;
+                    _isCountdown = false;
+                }
 
                 try
                 {
@@ -195,6 +243,7 @@
                 return;
             }
 
+            _finishSplitId = splits.Last().SplitId;
             _prefinishSplitId = splits[splits.Count - 2].SplitId;
 
             await LoadExistingFinishers(race);
@@ -211,16 +260,16 @@
 
     private async Task LoadExistingFinishers(RaceDTO race)
     {
-        if (_prefinishSplitId == null || _raceStartTime == null) return;
+        if (_finishSplitId == null || _raceStartTime == null) return;
 
         _finishers.Clear();
 
-        var prefinishRecords = race.TimeRecords?
-        .Where(tr => tr.SplitId == _prefinishSplitId.Value)
+        var finishRecords = race.TimeRecords?
+        .Where(tr => tr.SplitId == _finishSplitId.Value)
         .OrderBy(tr => tr.Timestamp)
         .ToList() ?? new List<TimeRecordResponseDTO>();
 
-        foreach (var timeRecord in prefinishRecords)
+        foreach (var timeRecord in finishRecords)
         {
             var registration = race.Registrations?.FirstOrDefault(r =>
             r.RegistrationChips?.Any(rc => rc.ChipId == timeRecord.ChipId) ?? false);
@@ -228,12 +277,8 @@
             if (registration == null) continue;
 
             var participantName = registration.ParticipantName ?? $"Participante #{registration.ParticipantId}";
-            var timestampLocal = timeRecord.Timestamp.Kind == DateTimeKind.Utc
-            ? timeRecord.Timestamp.ToLocalTime()
-            : timeRecord.Timestamp;
 
-            var elapsed = timestampLocal - _raceStartTime.Value;
-            var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
+            var elapsedTime = CalculateElapsedString(timeRecord.Timestamp);
 
             _finishers.Add(new FinisherData
             {
@@ -244,7 +289,44 @@
             });
         }
 
-        _lastFinisher = _finishers.LastOrDefault();
+        if (_prefinishSplitId != null)
+        {
+            var prefinishRecord = race.TimeRecords?
+            .Where(tr => tr.SplitId == _prefinishSplitId.Value)
+            .OrderByDescending(tr => tr.Timestamp)
+            .FirstOrDefault();
+
+            if (prefinishRecord != null)
+            {
+                var registration = race.Registrations?.FirstOrDefault(r =>
+                r.RegistrationChips?.Any(rc => rc.ChipId == prefinishRecord.ChipId) ?? false);
+
+                if (registration != null)
+                {
+                    _lastApproachingRunner = new FinisherData
+                    {
+                        BibNumber = registration.BibNumber ?? 0,
+                        ParticipantName = registration.ParticipantName ?? "",
+                        ElapsedTime = "",
+                        Timestamp = prefinishRecord.Timestamp
+                    };
+                }
+            }
+        }
+    }
+
+    private string CalculateElapsedString(DateTime timestampUtc)
+    {
+        if (!_raceStartTime.HasValue) return "00:00:00";
+
+        var utcTime = timestampUtc.Kind == DateTimeKind.Unspecified
+        ? DateTime.SpecifyKind(timestampUtc, DateTimeKind.Utc)
+        : timestampUtc;
+
+        var localTime = utcTime.ToLocalTime();
+        var elapsed = localTime - _raceStartTime.Value;
+
+        return $"{elapsed:hh\\:mm\\:ss}";
     }
 
     private async Task ConnectToSignalR()
@@ -260,109 +342,128 @@
             {
                 if (_disposed) return;
 
-                if (update.RaceId == RaceId && update.SplitId == _prefinishSplitId)
+                if (update.RaceId == RaceId)
                 {
-                    int bibNumber = 0;
-                    string participantName = "Corredor";
-                    int actualChipId = update.ChipId;
-
-                    try
+                    if (update.SplitId == _prefinishSplitId)
                     {
-                        await using var context = DbContextFactory.CreateDbContext();
-
-                        if (actualChipId == 0)
-                        {
-                            var latestRecord = await context.TimeRecords
-                .Where(tr => tr.RaceId == RaceId &&
-                tr.SplitId == update.SplitId &&
-                tr.Timestamp == update.Timestamp)
-                .OrderByDescending(tr => tr.TimeRecordId)
-                .Select(tr => tr.ChipId)
-                .FirstOrDefaultAsync();
-
-                            if (latestRecord > 0)
-                            {
-                                actualChipId = latestRecord;
-                            }
-                        }
-
-                        if (actualChipId > 0)
-                        {
-                            var regInfo = await (from rc in context.RegistrationChips
-                                                 join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
-                                                 join p in context.Participants on r.ParticipantId equals p.ParticipantId
-                                                 where rc.ChipId == actualChipId && r.RaceId == RaceId
-                                                 select new
-                                                 {
-                                                     r.BibNumber,
-                                                     ParticipantName = (p.FirstName + " " + p.LastName).Trim()
-                                                 }).FirstOrDefaultAsync();
-
-                            if (regInfo != null)
-                            {
-                                bibNumber = regInfo.BibNumber ?? 0;
-                                participantName = regInfo.ParticipantName;
-                            }
-                        }
+                        await HandleApproachingRunner(update);
                     }
-                    catch { }
-
-                    // Convertir timestamp UTC a local antes de calcular
-                    var timestampLocal = update.Timestamp.Kind == DateTimeKind.Utc
-        ? update.Timestamp.ToLocalTime()
-        : update.Timestamp;
-
-                    var elapsed = _raceStartTime.HasValue
-        ? timestampLocal - _raceStartTime.Value
-        : TimeSpan.Zero;
-
-                    var elapsedTime = $"{elapsed:hh\\:mm\\:ss}";
-
-                    var newFinisher = new FinisherData
+                    // Handle Finisher (Final Split)
+                    else if (update.SplitId == _finishSplitId)
                     {
-                        BibNumber = bibNumber,
-                        ParticipantName = participantName,
-                        ElapsedTime = elapsedTime,
-                        Timestamp = update.Timestamp
-                    };
-
-                    _finishers.Add(newFinisher);
-                    _lastFinisher = newFinisher;
-
-                    try
-                    {
-                        await InvokeAsync(StateHasChanged);
+                        await HandleFinisher(update);
                     }
-                    catch (ObjectDisposedException) { }
                 }
             });
 
             _hubConnection.Reconnected += async (connectionId) =>
             {
                 if (_disposed) return;
-
-                await _hubConnection.SendAsync("SubscribeToRace", RaceId);
-                if (_prefinishSplitId.HasValue)
-                {
-                    await _hubConnection.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
-                }
-
-                try
-                {
-                    await InvokeAsync(StateHasChanged);
-                }
-                catch (ObjectDisposedException) { }
+                await SubscribeToSplits();
             };
 
             await _hubConnection.StartAsync();
+            await SubscribeToSplits();
+        }
+        catch { }
+    }
 
-            await _hubConnection.SendAsync("SubscribeToRace", RaceId);
-            if (_prefinishSplitId.HasValue)
+    private async Task SubscribeToSplits()
+    {
+        var hub = _hubConnection ?? throw new InvalidOperationException("Hub connection not initialized");
+
+        await hub.SendAsync("SubscribeToRace", RaceId);
+
+        if (_prefinishSplitId.HasValue)
+            await hub.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
+
+        if (_finishSplitId.HasValue)
+            await hub.SendAsync("SubscribeToSplit", _finishSplitId.Value);
+    }
+
+
+    private async Task HandleApproachingRunner(LiveTimeUpdateDTO update)
+    {
+        var info = await GetParticipantInfo(update.ChipId, update.SplitId, update.Timestamp);
+
+        _lastApproachingRunner = new FinisherData
+        {
+            BibNumber = info.BibNumber,
+            ParticipantName = info.ParticipantName,
+            ElapsedTime = "",
+            Timestamp = update.Timestamp
+        };
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleFinisher(LiveTimeUpdateDTO update)
+    {
+        var info = await GetParticipantInfo(update.ChipId, update.SplitId, update.Timestamp);
+        var elapsedTime = CalculateElapsedString(update.Timestamp);
+
+        var newFinisher = new FinisherData
+        {
+            BibNumber = info.BibNumber,
+            ParticipantName = info.ParticipantName,
+            ElapsedTime = elapsedTime,
+            Timestamp = update.Timestamp
+        };
+
+        _finishers.Add(newFinisher);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task<(int BibNumber, string ParticipantName)> GetParticipantInfo(int chipId, int splitId, DateTime
+    timestamp)
+    {
+        int bibNumber = 0;
+        string participantName = "Corredor";
+        int actualChipId = chipId;
+
+        try
+        {
+            await using var context = DbContextFactory.CreateDbContext();
+
+            if (actualChipId == 0)
             {
-                await _hubConnection.SendAsync("SubscribeToSplit", _prefinishSplitId.Value);
+                var latestRecord = await context.TimeRecords
+                .Where(tr => tr.RaceId == RaceId &&
+                tr.SplitId == splitId &&
+                tr.Timestamp == timestamp)
+                .OrderByDescending(tr => tr.TimeRecordId)
+                .Select(tr => tr.ChipId)
+                .FirstOrDefaultAsync();
+
+                if (latestRecord > 0)
+                {
+                    actualChipId = latestRecord;
+                }
+            }
+
+            if (actualChipId > 0)
+            {
+                var regInfo = await (from rc in context.RegistrationChips
+                                     join r in context.Registrations on rc.RegistrationId equals r.RegistrationId
+                                     join p in context.Participants on r.ParticipantId equals p.ParticipantId
+                                     where rc.ChipId == actualChipId && r.RaceId == RaceId
+                                     select new
+                                     {
+                                         r.BibNumber,
+                                         ParticipantName = (p.FirstName + " " + p.LastName).Trim()
+                                     }).FirstOrDefaultAsync();
+
+                if (regInfo != null)
+                {
+                    bibNumber = regInfo.BibNumber ?? 0;
+                    participantName = regInfo.ParticipantName;
+                }
             }
         }
         catch { }
+
+        return (bibNumber, participantName);
     }
 
     public async ValueTask DisposeAsync()
@@ -382,9 +483,10 @@
             {
                 await _hubConnection.SendAsync("UnsubscribeFromRace", RaceId);
                 if (_prefinishSplitId.HasValue)
-                {
                     await _hubConnection.SendAsync("UnsubscribeFromSplit", _prefinishSplitId.Value);
-                }
+                if (_finishSplitId.HasValue)
+                    await _hubConnection.SendAsync("UnsubscribeFromSplit", _finishSplitId.Value);
+
                 await _hubConnection.StopAsync();
                 await _hubConnection.DisposeAsync();
             }
