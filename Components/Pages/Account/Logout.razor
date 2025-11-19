@@ -15,12 +15,12 @@
       <div class="d-inline-flex align-items-center justify-content-center bg-primary rounded-4 mb-4 logout-status-icon">
         <span class="material-symbols-outlined fs-1">logout</span>
       </div>
-      <h1 class="fw-bold mb-2">Cerrando sesiÛn</h1>
-      <p class="text-secondary mb-4">Por favor espera un momento mientras finalizamos tu sesiÛn.</p>
+      <h1 class="fw-bold mb-2">Cerrando sesi√≥n</h1>
+      <p class="text-secondary mb-4">Por favor espera un momento mientras finalizamos tu sesi√≥n.</p>
       <div class="spinner-border text-primary mb-3" role="status">
         <span class="visually-hidden">Cargando...</span>
       </div>
-      <small class="text-secondary d-block">Ser·s redirigido autom·ticamente.</small>
+      <small class="text-secondary d-block">Ser√°s redirigido autom√°ticamente.</small>
     </div>
   }
   else if (hasError)
@@ -30,7 +30,7 @@
         <span class="material-symbols-outlined fs-1">error</span>
       </div>
       <h1 class="fw-bold mb-2 text-danger">Error</h1>
-      <p class="text-secondary mb-4">OcurriÛ un problema al cerrar la sesiÛn. Intenta nuevamente.</p>
+      <p class="text-secondary mb-4">Ocurri√≥ un problema al cerrar la sesi√≥n. Intenta nuevamente.</p>
       <button class="btn btn-danger d-inline-flex align-items-center gap-2" @onclick="Retry">
         <span class="material-symbols-outlined fs-5">refresh</span>
         Reintentar
@@ -43,11 +43,11 @@
       <div class="d-inline-flex align-items-center justify-content-center bg-secondary rounded-4 mb-4 logout-status-icon">
         <span class="material-symbols-outlined fs-1">person_off</span>
       </div>
-      <h1 class="fw-bold mb-2">Sin sesiÛn activa</h1>
-      <p class="text-secondary mb-4">No habÌa una sesiÛn iniciada. Puedes volver al inicio o iniciar sesiÛn.</p>
+      <h1 class="fw-bold mb-2">Sin sesi√≥n activa</h1>
+      <p class="text-secondary mb-4">No hab√≠a una sesi√≥n iniciada. Puedes volver al inicio o iniciar sesi√≥n.</p>
       <div class="d-flex justify-content-center gap-2">
         <button class="btn btn-outline-secondary" @onclick="NavigateHome">Inicio</button>
-        <button class="btn btn-primary" @onclick="NavigateLogin">Iniciar SesiÛn</button>
+        <button class="btn btn-primary" @onclick="NavigateLogin">Iniciar Sesi√≥n</button>
       </div>
     </div>
   }
@@ -57,8 +57,8 @@
       <div class="d-inline-flex align-items-center justify-content-center bg-success rounded-4 mb-4 logout-status-icon">
         <span class="material-symbols-outlined fs-1">check_circle</span>
       </div>
-      <h1 class="fw-bold mb-2">SesiÛn cerrada</h1>
-      <p class="text-secondary mb-2">Tu sesiÛn se cerrÛ correctamente.</p>
+      <h1 class="fw-bold mb-2">Sesi√≥n cerrada</h1>
+      <p class="text-secondary mb-2">Tu sesi√≥n se cerr√≥ correctamente.</p>
       <p class="text-secondary mb-4">Redirigiendo...</p>
       <div class="spinner-border text-success" role="status">
         <span class="visually-hidden">Cargando...</span>
@@ -103,7 +103,7 @@
             }
             else
             {
-                Logger?.LogWarning("HttpContext nulo al cerrar sesiÛn");
+                Logger?.LogWarning("HttpContext nulo al cerrar sesi√≥n");
             }
 
             await Task.Delay(1000);
@@ -120,7 +120,7 @@
         {
             hasError = true;
             isProcessing = false;
-            Logger?.LogError(ex, "Error en flujo de cierre de sesiÛn");
+            Logger?.LogError(ex, "Error en flujo de cierre de sesi√≥n");
             StateHasChanged();
         }
     }

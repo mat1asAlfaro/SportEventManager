@@ -24,7 +24,7 @@
       </div>
       <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
         <select class="form-select" @onchange="OnCategoryChanged">
-          <option value="">Todas las categor�as</option>
+          <option value="">Todas las categorías</option>
           @foreach (var c in categories)
           {
             <option value="@c" selected="@(selectedCategory == c)">@c</option>
@@ -59,7 +59,7 @@
         <RadzenDataGridColumn TItem="LeaderboardRow" Title="Ritmo" Width="120px">
           <Template Context="r">@r.PaceFormatted</Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categor�a" Width="180px">
+        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categoría" Width="180px">
           <Template Context="r">@r.CategoryName</Template>
         </RadzenDataGridColumn>
       </Columns>
@@ -159,7 +159,7 @@
       {
         ParticipantName = regInfo?.Name ?? finish.ParticipantName ?? $"Chip {chipId}",
         BibNumber = regInfo?.Bib,
-        CategoryName = regInfo?.Category ?? "�",
+        CategoryName = regInfo?.Category ?? "-",
         TotalTime = total,
         PaceFormatted = pace
       });

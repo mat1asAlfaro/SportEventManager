@@ -25,7 +25,7 @@ namespace SportEventManager.Core.Services
         {
             await _tokens.InvalidateActiveAsync(email, purpose);
 
-            var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString(); // 6 d�gitos
+            var code = RandomNumberGenerator.GetInt32(100000, 999999).ToString(); // 6 dígitos
             var salt = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
             var hash = Hash(code, salt);
 
@@ -45,10 +45,10 @@ namespace SportEventManager.Core.Services
 
             await _email.SendAsync(
                 email,
-                "C�digo de verificaci�n",
-                $"Tu c�digo de verificaci�n es: {code}. Vence en 10 minutos.");
+                "Código de verificación",
+                $"Tu código de verificación es: {code}. Vence en 10 minutos.");
 
-            _logger.LogInformation("OTP generado para {Email}, prop�sito {Purpose}", email, purpose);
+            _logger.LogInformation("OTP generado para {Email}, propósito {Purpose}", email, purpose);
         }
 
         public async Task<bool> ValidateOtpAsync(string email, string purpose, string code)

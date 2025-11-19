@@ -80,7 +80,7 @@
     grid-column: 3; /* forzar a la tercera columna */
     justify-self: end; /* alinear a la derecha */
     margin-right: 1rem; /* mismo padding que links */
-    z-index: 1100; /* por encima del men� */
+    z-index: 1100; /* por encima del menú */
   }
 
   .nav_links {

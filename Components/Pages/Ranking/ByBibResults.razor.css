@@ -2,6 +2,6 @@
    No usar @import en archivos .razor.css. Los estilos compartidos
    se heredan desde Results.razor.css usando ::deep en el padre. */
 
-/* Estilos extra específicos de la pestaña (opcional)
+/* Estilos extra especÃ­ficos de la pestaÃ±a (opcional)
 .search-container { }
 */

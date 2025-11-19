@@ -444,7 +444,7 @@ namespace SportEventManager.Data
 
         public async Task<ParticipantRaceResultDTO?> GetParticipantRaceResultByBibAsync(int raceId, int bibNumber)
         {
-            var race = await _raceRepo.GetByIdAsync(raceId);
+            var race = await _raceRepo.GetRaceByIdAsync(raceId);
             if (race == null)
             {
                 _logger.LogWarning($"Race {raceId} not found");

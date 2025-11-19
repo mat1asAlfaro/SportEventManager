@@ -4,7 +4,7 @@ using SportEventManager.Core;
 
 namespace SportEventManager.Core.Services
 {
-    // En desarrollo: simula env�o de email escribiendo en logs
+    // En desarrollo: simula envío de email escribiendo en logs
     public class DevEmailSenderService : IEmailSender
     {
         private readonly ILogger<DevEmailSenderService> _logger;

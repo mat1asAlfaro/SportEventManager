@@ -15,7 +15,7 @@
             <div class="login-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-gradient mb-3 shadow" style="background: linear-gradient(135deg, var(--color-primary) 0%, #6c5ce7 100%);">
                 <span class="material-symbols-outlined fs-1 text-light">lock</span>
             </div>
-            <h2 class="fw-bold mb-1">Acceso Administración</h2>
+            <h2 class="fw-bold mb-1">Acceso AdministraciÃ³n</h2>
             <p class="text-secondary mb-0">Ingresa tus credenciales para continuar</p>
         </div>
 
@@ -35,12 +35,12 @@
             </div>
 
             <div class="mb-3">
-                <label for="password" class="form-label fw-semibold">Contraseña</label>
+                <label for="password" class="form-label fw-semibold">ContraseÃ±a</label>
                 <div class="input-group">
                     <span class="input-group-text bg-transparent border-end-0">
                         <span class="material-symbols-outlined fs-6">vpn_key</span>
                     </span>
-                    <InputText id="password" type="password" class="form-control border-start-0" @bind-Value="Model.Password" placeholder="••••••••" autocomplete="current-password" />
+                    <InputText id="password" type="password" class="form-control border-start-0" @bind-Value="Model.Password" placeholder="**********" autocomplete="current-password" />
                 </div>
                 <ValidationMessage For="@(() => Model.Password)" />
             </div>
@@ -55,7 +55,7 @@
 
             <button type="submit" class="btn btn-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
                 <span class="material-symbols-outlined fs-5">login</span>
-                <span>Iniciar sesión</span>
+                <span>Iniciar sesiÃ³n</span>
             </button>
         </EditForm>
     </div>
@@ -83,7 +83,7 @@
 
         if (userAccount == null || userAccount.PasswordHash != Model.Password)
         {
-            errorMessage = "Nombre de usuario o contraseña inválidos.";
+            errorMessage = "Nombre de usuario o contraseÃ±a invÃ¡lidos.";
             return;
         }
 

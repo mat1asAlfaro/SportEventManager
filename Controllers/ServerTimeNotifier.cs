@@ -1,4 +1,4 @@
-﻿
+
 // using Microsoft.AspNetCore.SignalR;
 // using SportEventManager.Core.Hubs;
 

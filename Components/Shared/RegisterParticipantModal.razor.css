@@ -15,7 +15,7 @@
   max-width: 160px;
 }
 
-/* Numeración de pasos (copiada de Home para css isolation del modal) */
+/* NumeraciÃ³n de pasos (copiada de Home para css isolation del modal) */
 .step-number {
   width: clamp(1.5rem, 4vw, 2.5rem);
   height: clamp(1.5rem, 4vw, 2.5rem);
