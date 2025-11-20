@@ -1,215 +1,263 @@
+@page "/rankings/leaderboard/{RaceId:int}"
 @using Radzen
 @using Radzen.Blazor
 @using SportEventManager.Core
-@using SportEventManager.Core.Services
 @using SportEventManager.DTOs
 @using SportEventManager.Models
-@inject ITimeRecordRepository TimeRecordRepository
-@inject ISplitRepository SplitRepository
-@inject IRegistrationRepository RegistrationRepository
+@using SportEventManager.Core.Services
+@using System.Linq
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
 @inject IRaceRepository RaceRepository
+@inject IRegistrationRepository RegistrationRepository
+@inject ISplitRepository SplitRepository
+@inject ITimeRecordRepository TimeRecordRepository
 @inject ITimingCalculationsService TimingService
 
-@* Tabla de posiciones con filtros y paginado *@
-<div class="card shadow-sm border-0 mt-4">
-  <div class="card-header border-bottom-0 pb-0">
-    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-end">
-      <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
-        <div class="position-relative">
-          <span
-            class="material-symbols-outlined fs-5 text-secondary position-absolute top-50 start-0 translate-middle-y ms-3">search</span>
-          <input type="text" class="form-control ps-5 placeholder-white" placeholder="Buscar corredor..."
-            @oninput="OnSearchTextChanged" />
-        </div>
-      </div>
-      <div class="flex-grow-1" style="min-width: 220px; max-width: 300px;">
-        <select class="form-select" @onchange="OnCategoryChanged">
-          <option value="">Todas las categorías</option>
-          @foreach (var c in categories)
-          {
-            <option value="@c" selected="@(selectedCategory == c)">@c</option>
-          }
-        </select>
-      </div>
-    </div>
-  </div>
+<PageTitle>Leaderboard</PageTitle>
 
-  <div class="card-body">
-    <RadzenDataGrid Data="@filteredRows" TItem="LeaderboardRow" AllowPaging="true" PageSize="10" AllowSorting="false"
-      ShowPagingSummary="true" Class="custom-data-grid-scroll">
-      <Columns>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Pos." Width="80px" Property="Position" />
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Atleta" Width="240px">
-          <Template Context="r">
-            <div class="d-flex align-items-center gap-2">
-              <span class="material-symbols-outlined text-secondary fs-2">account_circle</span>
-              <div>
-                <div class="fw-semibold">@r.ParticipantName</div>
-                @if (r.BibNumber.HasValue)
-                {
-                  <small class="text-secondary">Dorsal #@r.BibNumber</small>
-                }
-              </div>
+<div class="container-lg px-4 px-sm-5 px-lg-4">
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-primary fs-3">social_leaderboard</span>
+                <h1 class="fs-3 fw-bold text-primary mb-2">Leaderboard</h1>
             </div>
-          </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Tiempo" Width="140px">
-          <Template Context="r">@r.TotalTimeFormatted</Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Ritmo" Width="120px">
-          <Template Context="r">@r.PaceFormatted</Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="LeaderboardRow" Title="Categoría" Width="180px">
-          <Template Context="r">@r.CategoryName</Template>
-        </RadzenDataGridColumn>
-      </Columns>
-
-      <EmptyTemplate>
-        <div class="d-flex flex-column justify-content-center align-items-center py-5 text-center w-100">
-          <span class="material-symbols-outlined text-secondary fs-1 mb-2">leaderboard</span>
-          <h6 class="fw-semibold text-secondary mb-1">Sin resultados</h6>
-          <p class="small mb-0">No se encontraron resultados para esta carrera.</p>
+            <p class="text-secondary mb-0">Resultados finales de la carrera</p>
         </div>
-      </EmptyTemplate>
-    </RadzenDataGrid>
-  </div>
+        <button class="btn btn-secondary btn-lg d-flex align-items-center gap-2 bg-transparent border fs-6 fw-semibold" @onclick="GoBack">
+            <span class="material-symbols-outlined fs-5">keyboard_return</span>
+            Volver a rankings
+        </button>
+    </div>
+
+    @if (_isLoading) {
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body text-center py-5">
+                <div class="spinner-border text-primary slow-spinner leaderboard-spinner" role="status">
+                    <span class="visualmente-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3 text-secondary">Cargando leaderboard...</p>
+            </div>
+        </div>
+    } else if (_errorMessage is not null) {
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body text-center py-5">
+                <span class="material-symbols-outlined mb-3 text-danger error-icon">error</span>
+                <h3 class="fw-bold mb-2 text-primary">Error</h3>
+                <p class="text-secondary mb-4">@_errorMessage</p>
+                <button class="btn btn-primary d-inline-flex align-items-center gap-2" @onclick="Reload">
+                    <span class="material-symbols-outlined">refresh</span>
+                    <span>Reintentar</span>
+                </button>
+            </div>
+        </div>
+    } else if (_notFound) {
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body text-center py-5">
+                <span class="material-symbols-outlined mb-3 text-warning notfound-icon">search_off</span>
+                <h3 class="fw-bold mb-2 text-primary">Carrera no encontrada</h3>
+                <p class="text-secondary mb-4">No se pudo cargar la información de la carrera.</p>
+                <button class="btn btn-primary d-inline-flex align-items-center gap-2" @onclick="GoBack">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span>Volver</span>
+                </button>
+            </div>
+        </div>
+    } else {
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-4 text-secondary">emoji_events</span>
+                    <div>
+                        <div class="fw-semibold">@_eventName</div>
+                        <small class="text-secondary">@_raceName - @_raceDate</small>
+                    </div>
+                </div>
+                <div class="text-secondary small d-flex flex-column align-items-end">
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined">straighten</span>
+                        <span>Distancia: @_distanceKm km</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined">flag</span>
+                        <span>Puntos de control: @_splitCount</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined">group</span>
+                        <span>Total de inscriptos: @_regCount</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header border-bottom-0 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3 text-secondary small">
+                    <div class="d-flex align-items-center gap-1"><span class="material-symbols-outlined">timer</span><span>Pasajes por puntos de control: @_recordCount</span></div>
+                    <div class="d-flex align-items-center gap-1"><span class="material-symbols-outlined">trophy</span><span>Finalizados: @filteredEntries.Count</span></div>
+                </div>
+                <div class="leaderboard-search">
+                    <span class="material-symbols-outlined me-2">search</span>
+                    <input class="form-control form-control-sm" @bind="searchText" @bind:event="oninput" placeholder="Buscar por nombre, dorsal o categoría" />
+                </div>
+            </div>
+            <div class="card-body">
+                <RadzenDataGrid Data="@filteredEntries" TItem="LeaderboardEntry"
+                                AllowPaging="true" PageSize="20" PageSizeOptions="@_pageSizes" ShowPagingSummary="true"
+                                AllowAlternatingRows="true" AllowColumnResize="true" AllowColumnPicking="false"
+                                SelectionMode="DataGridSelectionMode.Single" @bind-SelectedItem="selectedEntry"
+                                Class="leaderboard-grid rz-grid rz-data-grid" RowRender="OnRowRender"
+                                Responsive="true" GridLines="DataGridGridLines.None" Style="min-width:100%;">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Pos." Width="90px">
+                            <Template Context="e">
+                                <div class="d-flex align-items-center gap-2 lb-cell-pos">
+                                    @if (e.Position <= 3)
+                                    {
+                                        <span class="material-symbols-outlined @(GetTrophyClass(e.Position))">emoji_events</span>
+                                    }
+                                    <span class="fw-semibold">@e.Position@("°")</span>
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Dorsal" Width="90px">
+                            <Template Context="e"><span class="lb-cell">@((e.BibNumber.HasValue ? "#" + e.BibNumber : "-"))</span></Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Participante" Width="240px">
+                            <Template Context="e">
+                                <div class="lb-cell">
+                                    @if (e.ParticipantId.HasValue && e.BibNumber.HasValue)
+                                    {
+                                        <RadzenLink Path="@($"/rankings/bib/{RaceId}/{e.BibNumber}")" Class="fw-semibold lb-link">@e.ParticipantName</RadzenLink>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold">@e.ParticipantName</span>
+                                    }
+                                </div>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Categoría" Width="180px" Property="CategoryName" />
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Tiempo Total" Width="140px">
+                            <Template Context="e"><span class="lb-cell">@e.TotalTimeFormatted</span></Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LeaderboardEntry" Title="Ritmo Promedio" Width="150px">
+                            <Template Context="e"><span class="lb-cell">@e.AveragePaceFormatted</span></Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                    <EmptyTemplate>
+                        @if (_raceStarted) {
+                            <div class="d-flex flex-column justify-content-center align-items-center py-5 text-center w-100">
+                                <span class="material-symbols-outlined text-secondary fs-1 mb-2">leaderboard</span>
+                                <h6 class="fw-semibold text-secondary mb-1">Sin finalizados</h6>
+                                <p class="small mb-0">Aún no hay participantes finalizados para esta carrera.</p>
+                            </div>
+                        } else {
+                            <div class="d-flex flex-column justify-content-center align-items-center py-5 text-center w-100">
+                                <span class="material-symbols-outlined text-secondary fs-1 mb-2">schedule</span>
+                                <h6 class="fw-semibold text-secondary mb-1">Carrera pendiente de inicio</h6>
+                                <p class="small mb-1">La carrera aún no ha comenzado.</p>
+                                <p class="small mb-0">Inicio programado: @_raceDate</p>
+                            </div>
+                        }
+                    </EmptyTemplate>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
-  [Parameter] public int RaceId { get; set; }
+    [Parameter] public int RaceId { get; set; }
+    private int[] _pageSizes = new[] {10,20,50};
 
-  private List<LeaderboardRow> rows = new();
-  private List<LeaderboardRow> filteredRows = new();
-  private List<string> categories = new();
-  private string? selectedCategory;
-  private string searchText = string.Empty;
-  private double raceDistanceKm;
+    private bool _isLoading = true;
+    private bool _notFound = false;
+    private string? _errorMessage;
 
-  protected override async Task OnParametersSetAsync()
-  {
-    await LoadDataAsync();
-    ApplyFilters();
-  }
+    private string _raceName = string.Empty;
+    private string _eventName = string.Empty;
+    private string _raceDate = string.Empty;
+    private double _distanceKm;
+    private DateTime? generatedAt;
+    private int _splitCount;
+    private int _recordCount;
+    private int _regCount;
+    private bool _raceStarted;
 
-  private async Task LoadDataAsync()
-  {
-    rows.Clear();
-    categories.Clear();
-    selectedCategory = null;
+    private List<LeaderboardEntry> entries = new();
+    private List<LeaderboardEntry> filteredEntries = new();
+    private LeaderboardEntry? selectedEntry;
 
-    if (RaceId <= 0) return;
+    private string _searchText = string.Empty;
+    private string searchText { get => _searchText; set { _searchText = value; ApplyFilter(); } }
 
-    var race = await RaceRepository.GetRaceByIdAsync(RaceId);
-    raceDistanceKm = race?.DistanceKm ?? 0;
-
-    var registrations = (await RegistrationRepository.GetByRaceIdAsync(RaceId)).ToList();
-    var regByChipId = registrations
-    .Where(r => r.RegistrationChips != null)
-    .SelectMany(r => r.RegistrationChips!.Select(rc => new { rc.ChipId, Reg = r }))
-    .ToDictionary(x => x.ChipId, x => new
-    {
-      Name = $"{x.Reg.Participant?.FirstName} {x.Reg.Participant?.LastName}".Trim(),
-      Bib = x.Reg.BibNumber,
-      Category = x.Reg.Category?.ExternalName ?? x.Reg.Category?.InternalName ?? ""
-    });
-
-    categories = registrations
-    .Select(r => r.Category?.ExternalName ?? r.Category?.InternalName)
-    .Where(n => !string.IsNullOrWhiteSpace(n))
-    .Distinct()
-    .OrderBy(n => n)
-    .ToList()!;
-
-    var splits = (await SplitRepository.GetByRaceIdAsync(RaceId)).ToList();
-    var finalSplit = splits
-    .OrderByDescending(s => s.KmMark)
-    .FirstOrDefault();
-
-    if (finalSplit == null)
-    {
-      rows = new();
-      return;
+    protected override async Task OnParametersSetAsync() {
+        _isLoading = true; _notFound = false; _errorMessage = null; entries.Clear(); filteredEntries = new List<LeaderboardEntry>();
+        try {
+            var race = await WithTimeout(RaceRepository.GetRaceDTOByIdAsync(RaceId), TimeSpan.FromSeconds(8));
+            if (race is null) { _notFound = true; return; }
+            _eventName = race.EventName ?? race.Event?.Name ?? "Evento";
+            _raceName = race.RaceName ?? "Carrera";
+            _raceDate = race.StartTime.ToString("dd/MM/yyyy HH:mm");
+            _distanceKm = race.DistanceKm; _raceStarted = DateTime.Now >= race.StartTime;
+            await LoadEntriesAsync(); ApplyFilter(); generatedAt = DateTime.Now;
+        } catch (TimeoutException) { _errorMessage = "Tiempo de consulta excedido. Intenta nuevamente."; }
+        catch (Exception ex) { _errorMessage = ex.Message; }
+        finally { _isLoading = false; }
     }
 
-    var records = await TimeRecordRepository.GetTimeRecordsByRaceAsync(RaceId);
-
-    var groupedByChip = records
-    .GroupBy(r => r.ChipId)
-    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList());
-
-    var finishByChip = records
-    .Where(r => r.SplitId == finalSplit.SplitId)
-    .GroupBy(r => r.ChipId)
-    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).Last());
-
-    foreach (var kv in finishByChip)
-    {
-      var chipId = kv.Key;
-      var finish = kv.Value;
-      if (!groupedByChip.TryGetValue(chipId, out var allChip)) continue;
-
-      var start = allChip.First();
-      var total = finish.Timestamp - start.Timestamp;
-
-      regByChipId.TryGetValue(chipId, out var regInfo);
-
-      var pace = raceDistanceKm > 0 ? TimingService.CalculatePace(total, raceDistanceKm) : "--";
-
-      rows.Add(new LeaderboardRow
-      {
-        ParticipantName = regInfo?.Name ?? finish.ParticipantName ?? $"Chip {chipId}",
-        BibNumber = regInfo?.Bib,
-        CategoryName = regInfo?.Category ?? "-",
-        TotalTime = total,
-        PaceFormatted = pace
-      });
+    private void ApplyFilter() {
+        if (string.IsNullOrWhiteSpace(searchText)) { filteredEntries = entries.ToList(); return; }
+        var termLower = searchText.Trim().ToLowerInvariant(); int parsedBib = -1;
+        if (searchText.StartsWith("#")) int.TryParse(new string(searchText.Where(char.IsDigit).ToArray()), out parsedBib);
+        else if (int.TryParse(searchText, out var numeric)) parsedBib = numeric;
+        filteredEntries = entries.Where(e =>
+            (!string.IsNullOrEmpty(e.ParticipantName) && e.ParticipantName!.ToLowerInvariant().Contains(termLower)) ||
+            (!string.IsNullOrEmpty(e.CategoryName) && e.CategoryName!.ToLowerInvariant().Contains(termLower)) ||
+            (parsedBib >= 0 && e.BibNumber.HasValue && e.BibNumber.Value == parsedBib)).ToList();
     }
 
-    rows = rows
-    .OrderBy(r => r.TotalTime)
-    .Select((r, idx) => { r.Position = idx + 1; return r; })
-    .ToList();
-  }
-
-  private void ApplyFilters()
-  {
-    IEnumerable<LeaderboardRow> query = rows;
-
-    if (!string.IsNullOrWhiteSpace(searchText))
-    {
-      var txt = searchText.Trim();
-      query = query.Where(r => (r.ParticipantName?.Contains(txt, StringComparison.OrdinalIgnoreCase) ?? false));
+    private async Task LoadEntriesAsync() {
+        var splits = (await WithTimeout(SplitRepository.GetByRaceIdAsync(RaceId), TimeSpan.FromSeconds(8)))?.ToList() ?? new();
+        _splitCount = splits.Count;
+        var registrations = (await WithTimeout(RegistrationRepository.GetByRaceIdAsync(RaceId), TimeSpan.FromSeconds(8)))?.ToList() ?? new();
+        _regCount = registrations.Count;
+        var finalSplit = splits.OrderByDescending(s => s.KmMark).FirstOrDefault(); if (finalSplit == null) return;
+        var records = await WithTimeout(TimeRecordRepository.GetTimeRecordsByRaceAsync(RaceId), TimeSpan.FromSeconds(12));
+        _recordCount = records?.Count ?? 0; if (records == null || records.Count == 0) return;
+        var chipToRegistration = registrations.Where(r => r.RegistrationChips != null)
+            .SelectMany(r => r.RegistrationChips!.Select(c => new { c.ChipId, Reg = r }))
+            .GroupBy(x => x.ChipId).ToDictionary(g => g.Key, g => g.First().Reg);
+        var groupedByChip = records.GroupBy(r => r.ChipId).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList());
+        foreach (var (chipId, list) in groupedByChip) {
+            try {
+                var finish = list.LastOrDefault(r => r.SplitId == finalSplit.SplitId); if (finish == null) continue;
+                var start = list.First(); if (finish.Timestamp < start.Timestamp) continue;
+                var total = finish.Timestamp - start.Timestamp;
+                chipToRegistration.TryGetValue(chipId, out var reg);
+                var participantName = reg?.Participant != null ? $"{reg.Participant.FirstName} {reg.Participant.LastName}".Trim() : finish.ParticipantName ?? $"Chip {chipId}";
+                var categoryName = reg?.Category?.ExternalName ?? reg?.Category?.InternalName ?? "-"; var bib = reg?.BibNumber;
+                var paceStr = _distanceKm > 0 ? TimingService.CalculatePace(total, _distanceKm) : "--";
+                entries.Add(new LeaderboardEntry { ParticipantId = reg?.ParticipantId, ParticipantName = participantName, BibNumber = bib, CategoryName = categoryName, TotalTime = total, AveragePaceFormatted = paceStr });
+            } catch { }
+        }
+        entries = entries.OrderBy(e => e.TotalTime).Select((e, idx) => { e.Position = idx + 1; return e; }).ToList();
     }
 
-    if (!string.IsNullOrWhiteSpace(selectedCategory))
-    {
-      query = query.Where(r => string.Equals(r.CategoryName, selectedCategory, StringComparison.OrdinalIgnoreCase));
+    private void OnRowRender(RowRenderEventArgs<LeaderboardEntry> args) {
+        var classes = new List<string>{"rz-data-row","lb-row"};
+        if (args.Data.Position <=3) classes.Add("podium"+args.Data.Position);
+        args.Attributes["class"] = string.Join(" ", classes);
     }
 
-    filteredRows = query.ToList();
-  }
+    private string GetTrophyClass(int pos) => pos switch {1=>"trophy-gold",2=>"trophy-silver",3=>"trophy-bronze",_=>""};
 
-  private void OnSearchTextChanged(ChangeEventArgs e)
-  {
-    searchText = e.Value?.ToString() ?? string.Empty;
-    ApplyFilters();
-  }
+    private async Task<T?> WithTimeout<T>(Task<T> task, TimeSpan timeout) { var delayTask = Task.Delay(timeout); var completed = await Task.WhenAny(task, delayTask); if (completed == delayTask) throw new TimeoutException(); return await task; }
 
-  private void OnCategoryChanged(ChangeEventArgs e)
-  {
-    selectedCategory = e.Value?.ToString();
-    if (string.IsNullOrEmpty(selectedCategory)) selectedCategory = null;
-    ApplyFilters();
-  }
+    private void GoBack() => Navigation.NavigateTo("/rankings#leaderboard");
+    private void Reload() => Navigation.NavigateTo(Navigation.Uri, true);
 
-  private class LeaderboardRow
-  {
-    public int Position { get; set; }
-    public string? ParticipantName { get; set; }
-    public int? BibNumber { get; set; }
-    public TimeSpan TotalTime { get; set; }
-    public string TotalTimeFormatted => string.Format("{0:hh\\:mm\\:ss}", TotalTime);
-    public string? CategoryName { get; set; }
-    public string PaceFormatted { get; set; } = "--";
-  }
+    private class LeaderboardEntry { public int Position { get; set; } public int? ParticipantId { get; set; } public string? ParticipantName { get; set; } public int? BibNumber { get; set; } public TimeSpan TotalTime { get; set; } public string TotalTimeFormatted => string.Format("{0:hh\\:mm\\:ss}", TotalTime); public string? CategoryName { get; set; } public string AveragePaceFormatted { get; set; } = "--"; }
 }

@@ -1,7 +1,7 @@
-@* Componente: Leaderboard (solo filtros de selección) *@
 @using SportEventManager.Core
 @using SportEventManager.DTOs
 @inject IEventRepository EventRepository
+@inject NavigationManager Navigation
 
 <div class="search-container mb-0">
   <h5 class="fw-bold mb-2">Leaderboard</h5>
@@ -35,18 +35,14 @@
   <div class="d-flex justify-content-center mt-2">
     <button class="btn btn-primary btn-lg px-5 py-3 d-inline-flex align-items-center gap-2 fw-semibold"
             disabled="@(string.IsNullOrWhiteSpace(selectedEventId) || string.IsNullOrWhiteSpace(selectedRaceId))"
-            @onclick="RequestShowTable">
-            <span class="material-symbols-outlined fs-4">social_leaderboard</span>
+            @onclick="NavigateToLeaderboard">
+      <span class="material-symbols-outlined fs-4">social_leaderboard</span>
       Ver leaderboard
     </button>
   </div>
 </div>
 
 @code {
-  [Parameter] public EventCallback<string?> OnEventChange { get; set; }
-  [Parameter] public EventCallback<string?> OnRaceChange { get; set; }
-  [Parameter] public EventCallback OnShowTableRequested { get; set; }
-
   private bool isRaceEnabled = false;
   private string? selectedEventId;
   private string? selectedRaceId;
@@ -57,7 +53,6 @@
   protected override async Task OnInitializedAsync()
   {
     var events = await EventRepository.GetAllEventsWithRacesAndSplitsAsync();
-
     var now = DateTime.Now;
     finishedEvents = events
       .Where(e => e.EndDate <= now)
@@ -65,7 +60,7 @@
       .ToList();
   }
 
-  private async Task OnEventChanged(ChangeEventArgs e)
+  private void OnEventChanged(ChangeEventArgs e)
   {
     selectedEventId = e.Value?.ToString();
     isRaceEnabled = !string.IsNullOrWhiteSpace(selectedEventId);
@@ -84,22 +79,18 @@
           .ToList();
       }
     }
-
-    await OnEventChange.InvokeAsync(selectedEventId);
-    await OnRaceChange.InvokeAsync(null);
   }
 
-  private async Task OnRaceChanged(ChangeEventArgs e)
+  private void OnRaceChanged(ChangeEventArgs e)
   {
     selectedRaceId = e.Value?.ToString();
-    await OnRaceChange.InvokeAsync(selectedRaceId);
   }
 
-  private async Task RequestShowTable()
+  private void NavigateToLeaderboard()
   {
-    if (!string.IsNullOrWhiteSpace(selectedEventId) && !string.IsNullOrWhiteSpace(selectedRaceId))
+    if (int.TryParse(selectedRaceId, out var raceId))
     {
-      await OnShowTableRequested.InvokeAsync();
+      Navigation.NavigateTo($"/rankings/leaderboard/{raceId}");
     }
   }
 }

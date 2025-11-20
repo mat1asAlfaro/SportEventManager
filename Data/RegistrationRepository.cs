@@ -195,5 +195,10 @@ namespace SportEventManager.Data
         .Where(r => r.RaceId == raceId)
         .ToListAsync();
         }
+
+        public async Task<int> CountByRaceIdAsync(int raceId)
+        {
+            return await _context.Registrations.Where(r => r.RaceId == raceId).CountAsync();
+        }
     }
 }
