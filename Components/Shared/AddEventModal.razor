@@ -28,11 +28,12 @@
         <div class="row">
           <div class="col">
             <label class="form-label fw-semibold">Fecha Inicio</label>
-            <input type="date" class="form-control custom-datetime" @bind="newEvent.StartDate" />
+            <input type="date" class="form-control custom-datetime" @bind="newEvent.StartDate"
+              @bind:after="OnStartDateChanged" />
           </div>
           <div class="col">
             <label class="form-label fw-semibold">Fecha Fin</label>
-            <input type="date" class="form-control custom-datetime" @bind="newEvent.EndDate" />
+            <input type="date" class="form-control custom-datetime" @bind="newEvent.EndDate" min="@MinEndDate" />
           </div>
         </div>
       </div>
@@ -52,6 +53,7 @@
 @code {
   private bool IsVisible { get; set; }
   private Event newEvent = new();
+  private string MinEndDate = "";
 
   [Parameter] public EventCallback<Event> OnSave { get; set; }
 
@@ -85,6 +87,19 @@
       await OnSave.InvokeAsync(newEvent);
 
     IsVisible = false;
+  }
+
+  private void OnStartDateChanged()
+  {
+    if (newEvent?.StartDate != null)
+    {
+      MinEndDate = newEvent.StartDate.AddDays(1).ToString("yyyy-MM-dd");
+
+      if (newEvent.EndDate < newEvent.StartDate.AddDays(1))
+      {
+        newEvent.EndDate = newEvent.StartDate.AddDays(1);
+      }
+    }
   }
 
   private void Close()
